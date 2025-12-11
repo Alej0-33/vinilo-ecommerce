@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import Logo from '../../assets/vinilo.png'; 
+import { Link } from 'react-router-dom';
 import { ShoppingBag, Search, Menu, X, User } from 'lucide-react';
+import { useCart } from '../../context/CartContext'; // <--- Importar Contexto
+// import Logo from '../../assets/vinilo.png'; 
 
-const Header = () => {
+const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => { 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { cartCount } = useCart(); 
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,85 +18,103 @@ const Header = () => {
   }, []);
 
   const navLinks = [
-    { name: 'HOMBRE', href: '#' },
-    { name: 'MUJER', href: '#' },
-    { name: 'NUEVO', href: '#', isRed: true }, // Destacado en rojo
-    { name: 'SALE', href: '#' }
+    { name: 'INICIO', href: '/', isHighlight: false },
+    { name: 'CATÁLOGO', href: '/catalogo', isHighlight: true },
+    { name: 'HOMBRE', href: '/catalogo', isHighlight: false }, 
+    { name: 'MUJER', href: '/catalogo', isHighlight: false }
   ];
 
   return (
     <>
       <header 
-        className={`fixed top-0 w-full z-40 transition-all duration-300 border-b border-transparent ${
+        className={`fixed top-0 w-full z-40 transition-all duration-500 ${
           isScrolled 
-            ? 'bg-white/95 backdrop-blur-md border-gray-100 py-2 shadow-sm' 
-            : 'bg-transparent py-4'
+            ? 'bg-white text-vinilo-black py-3 shadow-sm' 
+            : 'bg-transparent text-vinilo-black py-6'
         }`}
       >
-        <div className="container mx-auto px-4 md:px-8">
-          <div className="flex justify-between items-center h-12">
-            
-            {/* Mobile Menu Button & Search (Left on Mobile) */}
-            <div className="flex items-center gap-4 md:hidden">
-              <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-              <Search size={20} />
-            </div>
+        <div className="container mx-auto px-6 flex justify-between items-center">
+          
+          {/* Menu Mobile & Search */}
+          <div className="flex items-center gap-4 md:hidden">
+            <button onClick={() => setIsMobileMenuOpen(true)}> <Menu size={24} /> </button>
+            <button onClick={onOpenSearch}><Search size={20} /></button>
+          </div>
 
-            {/* Logo (Centered on Mobile, Left on Desktop) */}
-            <div className="flex-shrink-0 flex items-center justify-center md:justify-start w-full md:w-auto absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none">
-              <img src={Logo} alt="Vinilo" className="h-8 md:h-10 object-contain" />
-            </div>
+          {/* Logo (Ahora es un Link al inicio) */}
+          <div className="flex-1 md:flex-none text-center md:text-left">
+            <Link to="/" className="font-serif text-3xl font-bold tracking-tighter italic">
+              Vinilo<span className="text-vinilo-red">.</span>
+            </Link>
+          </div>
 
-            {/* Desktop Navigation (Centered) */}
-            <nav className="hidden md:flex gap-8 absolute left-1/2 transform -translate-x-1/2">
-              {navLinks.map((link) => (
-                <a 
-                  key={link.name} 
-                  href={link.href} 
-                  className={`font-serif text-sm font-bold tracking-widest hover:underline decoration-1 underline-offset-4 ${
-                    link.isRed ? 'text-vinilo-red' : 'text-vinilo-black'
-                  }`}
-                >
-                  {link.name}
-                </a>
-              ))}
-            </nav>
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex gap-10 mx-auto">
+            {navLinks.map((link) => (
+              <Link 
+                key={link.name} 
+                to={link.href} 
+                className={`text-xs font-bold tracking-[0.15em] hover:text-vinilo-red transition-colors relative group ${link.isHighlight ? 'text-vinilo-red' : ''}`}
+              >
+                {link.name}
+                <span className="absolute -bottom-2 left-0 w-0 h-0.5 bg-vinilo-red transition-all duration-300 group-hover:w-full"></span>
+              </Link>
+            ))}
+          </nav>
 
-            {/* Right Icons */}
-            <div className="flex items-center gap-5 text-vinilo-black">
-              <div className="hidden md:block cursor-pointer hover:text-vinilo-red transition-colors">
-                 <Search size={20} strokeWidth={1.5} />
-              </div>
-              <div className="hidden md:block cursor-pointer hover:text-vinilo-red transition-colors">
-                <User size={20} strokeWidth={1.5} />
-              </div>
-              <div className="relative cursor-pointer hover:text-vinilo-red transition-colors">
-                <ShoppingBag size={20} strokeWidth={1.5} />
-                <span className="absolute -top-1.5 -right-1.5 bg-vinilo-black text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">2</span>
-              </div>
-            </div>
+          {/* Icons */}
+          <div className="flex items-center gap-6">
+            <button onClick={onOpenSearch} className="hidden md:block hover:text-vinilo-red transition-colors">
+               <Search size={20} />
+            </button>
+            <button onClick={onOpenAccount} className="hidden md:block hover:text-vinilo-red transition-colors">
+              <User size={20} />
+            </button>
+            <button 
+              onClick={onOpenCart} 
+              className="relative hover:text-vinilo-red transition-colors"
+            >
+              <ShoppingBag size={20} />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-vinilo-red text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold animate-scale-in">
+                  {cartCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      <div className={`fixed inset-0 bg-white z-30 transform transition-transform duration-300 pt-24 px-6 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex flex-col gap-6">
-           {navLinks.map((link) => (
-            <a 
-              key={link.name} 
-              href={link.href} 
-              className={`font-serif text-2xl border-b border-gray-100 pb-2 ${link.isRed ? 'text-vinilo-red' : 'text-vinilo-black'}`}
-            >
-              {link.name}
-            </a>
-          ))}
-          <div className="mt-8 flex flex-col gap-4 text-gray-500 font-sans text-sm">
-            <a href="#">Mi Cuenta</a>
-            <a href="#">Ayuda</a>
-          </div>
+      {/* Mobile Menu Sidebar */}
+      <div className={`fixed inset-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 bg-white`}>
+        <div className="p-6 flex flex-col h-full">
+            <div className="flex justify-between items-center mb-10">
+                <h2 className="font-serif text-2xl italic">Menú</h2>
+                <button onClick={() => setIsMobileMenuOpen(false)}><X size={24} /></button>
+            </div>
+             
+             {/* Navegación Móvil */}
+             <nav className="flex flex-col gap-6">
+                {navLinks.map((link) => (
+                  <Link 
+                    key={link.name} 
+                    to={link.href} 
+                    className={`text-xl font-serif ${link.isHighlight ? 'text-vinilo-red italic' : 'text-vinilo-black'}`}
+                    onClick={() => setIsMobileMenuOpen(false)} // Cierra el menú al navegar
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+             </nav>
+
+             <div className="mt-auto border-t border-gray-100 pt-6">
+                <button 
+                    onClick={() => { setIsMobileMenuOpen(false); onOpenAccount(); }} 
+                    className="text-sm font-sans uppercase tracking-widest text-gray-500 hover:text-vinilo-red transition-colors"
+                >
+                    Mi Cuenta
+                </button>
+             </div>
         </div>
       </div>
     </>

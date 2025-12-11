@@ -1,26 +1,23 @@
 import React from 'react';
 import ProductCard from '../ui/ProductCard';
 
-const ProductGrid = ({ title, subtitle, products }) => {
+const ProductGrid = ({ title, products }) => {
   return (
-    <section className="py-16 md:py-24 px-4 bg-white">
-      <div className="container mx-auto">
+    <section className="py-24 bg-white">
+      <div className="container mx-auto px-6">
         
-        {/* Encabezado de la Sección */}
-        <div className="flex flex-col items-center mb-12 md:mb-16">
-          {subtitle && (
-            <span className="text-vinilo-red font-bold uppercase tracking-widest text-[10px] md:text-xs mb-3">
-              {subtitle}
-            </span>
-          )}
-          <h2 className="font-serif text-3xl md:text-5xl text-vinilo-black text-center font-medium">
-            {title}
+        {/* Header */}
+        <div className="flex justify-between items-end mb-16 border-b border-gray-100 pb-4">
+          <h2 className="font-serif text-3xl md:text-4xl text-vinilo-black">
+            {title}<span className="text-vinilo-red">.</span>
           </h2>
+          <a href="#" className="hidden md:block font-sans text-xs font-bold uppercase tracking-widest text-vinilo-black hover:text-vinilo-red transition-colors">
+            Ver Todos
+          </a>
         </div>
 
-        {/* Grilla de Productos */}
-        {/* Grid-cols-2 en móvil para que las fotos se vean grandes (Estilo Mattelsa) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-12 md:gap-x-8">
+        {/* Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-12 md:gap-8">
           {products.map((product) => (
             <ProductCard 
               key={product.id} 
@@ -29,14 +26,8 @@ const ProductGrid = ({ title, subtitle, products }) => {
           ))}
         </div>
 
-        {/* Botón/Link "Ver Todo" */}
-        <div className="mt-16 text-center">
-          <a 
-            href="#" 
-            className="inline-block border-b border-vinilo-black pb-1 text-xs md:text-sm uppercase tracking-widest font-bold text-vinilo-black hover:text-vinilo-red hover:border-vinilo-red transition-all duration-300"
-          >
-            Ver todo el catálogo
-          </a>
+        <div className="mt-12 text-center md:hidden">
+            <button className="text-xs border-b border-black pb-1 uppercase tracking-widest">Ver Todo</button>
         </div>
 
       </div>

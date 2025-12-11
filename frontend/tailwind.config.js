@@ -13,6 +13,7 @@ export default {
       },
       fontFamily: {
         serif: ['"Noto Serif"', 'serif'], 
+        sans:['"Inter"', 'sans-serif'],
       }
     },
   },
