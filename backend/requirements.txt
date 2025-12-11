@@ -1,0 +1,32 @@
+# Django Core
+Django==5.0.1
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-filter==23.5
+
+# PostgreSQL
+psycopg2-binary>=2.9.10
+
+# Async Tasks
+redis==5.0.1
+
+# WebSocket
+channels==4.0.0
+channels-redis==4.1.0
+daphne==4.0.0
+
+
+# JWT Auth
+djangorestframework-simplejwt==5.3.1
+
+# Utils
+python-decouple==3.8
+Pillow==11.0.0
+phonenumbers==8.13.27
+
+# Security
+django-ratelimit==4.1.0
+
+# Production
+gunicorn==21.2.0
+uvicorn[standard]==0.25.0

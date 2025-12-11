@@ -1,0 +1,48 @@
+# --- General / Sistema Operativo ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Python / Django (Backend) ---
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales (Vi que tienes una carpeta 'env' en backend)
+env/
+venv/
+.venv/
+backend/env/
+
+# Base de datos (Usualmente local, no se sube a menos que sea necesario)
+db.sqlite3
+db.sqlite3-journal
+
+# Django Media (Archivos subidos por usuarios)
+media/
+static/
+
+# Variables de entorno (¡Muy importante no subir claves secretas!)
+.env
+.env.local
+
+# --- Node / React / Vite (Frontend) ---
+# Dependencias (Nunca se deben subir)
+node_modules/
+frontend/node_modules/
+
+# Archivos de producción (Build)
+dist/
+build/
+
+# Logs de npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite / Testing
+coverage/
+.eslintcache
