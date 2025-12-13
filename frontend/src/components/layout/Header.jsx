@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom'; // 1. Importar useLocation para resaltar activo
 import { ShoppingBag, Search, Menu, X, User } from 'lucide-react';
-import { useCart } from '../../context/CartContext'; // <--- Importar Contexto
-// import Logo from '../../assets/vinilo.png'; 
+import { useCart } from '../../context/CartContext';
 
 const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => { 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cartCount } = useCart(); 
+  const location = useLocation(); // 2. Obtener ubicación actual para lógica de resaltado
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,12 +17,21 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // 3. Rutas actualizadas con Query Params
   const navLinks = [
-    { name: 'INICIO', href: '/', isHighlight: false },
-    { name: 'CATÁLOGO', href: '/catalogo', isHighlight: true },
-    { name: 'HOMBRE', href: '/catalogo', isHighlight: false }, 
-    { name: 'MUJER', href: '/catalogo', isHighlight: false }
+    { name: 'INICIO', path: '/', isHighlight: false },
+    { name: 'CATÁLOGO', path: '/catalogo', isHighlight: true }, // Muestra todo
+    { name: 'HOMBRE', path: '/catalogo?genero=hombre', isHighlight: false }, 
+    { name: 'MUJER', path: '/catalogo?genero=mujer', isHighlight: false }
   ];
+
+  // Helper para saber si un link está activo (incluyendo query params)
+  const isActive = (linkPath) => {
+      if (linkPath === '/') return location.pathname === '/';
+      // Compara pathname + search (query) para coincidencia exacta en filtros
+      return (location.pathname + location.search) === linkPath || 
+             (linkPath === '/catalogo' && location.pathname === '/catalogo' && location.search === ''); 
+  };
 
   return (
     <>
@@ -35,13 +44,11 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
       >
         <div className="container mx-auto px-6 flex justify-between items-center">
           
-          {/* Menu Mobile & Search */}
           <div className="flex items-center gap-4 md:hidden">
             <button onClick={() => setIsMobileMenuOpen(true)}> <Menu size={24} /> </button>
             <button onClick={onOpenSearch}><Search size={20} /></button>
           </div>
 
-          {/* Logo (Ahora es un Link al inicio) */}
           <div className="flex-1 md:flex-none text-center md:text-left">
             <Link to="/" className="font-serif text-3xl font-bold tracking-tighter italic">
               Vinilo<span className="text-vinilo-red">.</span>
@@ -50,19 +57,27 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex gap-10 mx-auto">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.name} 
-                to={link.href} 
-                className={`text-xs font-bold tracking-[0.15em] hover:text-vinilo-red transition-colors relative group ${link.isHighlight ? 'text-vinilo-red' : ''}`}
-              >
-                {link.name}
-                <span className="absolute -bottom-2 left-0 w-0 h-0.5 bg-vinilo-red transition-all duration-300 group-hover:w-full"></span>
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+               const active = isActive(link.path);
+               return (
+                <Link 
+                    key={link.name} 
+                    to={link.path} 
+                    className={`text-xs font-bold tracking-[0.15em] transition-colors relative group 
+                        ${link.isHighlight ? 'text-vinilo-red' : 'hover:text-vinilo-red text-vinilo-black'}
+                        ${active ? 'text-vinilo-red' : ''}
+                    `}
+                >
+                    {link.name}
+                    {/* Indicador de activo */}
+                    <span className={`absolute -bottom-2 left-0 h-0.5 bg-vinilo-red transition-all duration-300 
+                        ${active ? 'w-full' : 'w-0 group-hover:w-full'}`}>
+                    </span>
+                </Link>
+               )
+            })}
           </nav>
 
-          {/* Icons */}
           <div className="flex items-center gap-6">
             <button onClick={onOpenSearch} className="hidden md:block hover:text-vinilo-red transition-colors">
                <Search size={20} />
@@ -70,10 +85,7 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
             <button onClick={onOpenAccount} className="hidden md:block hover:text-vinilo-red transition-colors">
               <User size={20} />
             </button>
-            <button 
-              onClick={onOpenCart} 
-              className="relative hover:text-vinilo-red transition-colors"
-            >
+            <button onClick={onOpenCart} className="relative hover:text-vinilo-red transition-colors">
               <ShoppingBag size={20} />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-vinilo-red text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold animate-scale-in">
@@ -93,14 +105,16 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
                 <button onClick={() => setIsMobileMenuOpen(false)}><X size={24} /></button>
             </div>
              
-             {/* Navegación Móvil */}
              <nav className="flex flex-col gap-6">
                 {navLinks.map((link) => (
                   <Link 
                     key={link.name} 
-                    to={link.href} 
-                    className={`text-xl font-serif ${link.isHighlight ? 'text-vinilo-red italic' : 'text-vinilo-black'}`}
-                    onClick={() => setIsMobileMenuOpen(false)} // Cierra el menú al navegar
+                    to={link.path} 
+                    className={`text-xl font-serif 
+                        ${link.isHighlight ? 'text-vinilo-red italic' : 'text-vinilo-black'}
+                        ${isActive(link.path) ? 'text-vinilo-red italic underline decoration-1 underline-offset-4' : ''}
+                    `}
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {link.name}
                   </Link>

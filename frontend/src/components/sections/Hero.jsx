@@ -29,7 +29,7 @@ const Hero = () => {
           </p>
           <div className="flex gap-4">
             <Button variant="outline" size="md">Ver Colección</Button>
-            <Button variant="primary" size="md">Best Sellers</Button>
+            <Button variant="primary" size="md">Mas Vendidos</Button>
           </div>
         </div>
       </div>
