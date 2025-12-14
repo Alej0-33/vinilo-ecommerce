@@ -27,7 +27,7 @@ const Footer = () => {
             <div>
               <h2 className="font-serif text-4xl italic mb-6">Vinilo<span className="text-vinilo-red">.</span></h2>
               <p className="font-sans text-sm text-gray-400 font-light leading-relaxed max-w-sm">
-                Redefiniendo el paso urbano con elegancia atemporal. Diseñado y fabricado éticamente en Colombia para quienes caminan con propósito.
+                Redefiniendo el paso urbano con elegancia atemporal. Zapatos para quienes caminan con propósito.
               </p>
             </div>
             

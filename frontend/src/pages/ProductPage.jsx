@@ -146,8 +146,8 @@ const ProductPage = () => {
                     <div className="flex items-start gap-3">
                         <Truck size={20} className="text-vinilo-black flex-shrink-0" />
                         <div>
-                            <h4 className="text-xs font-bold uppercase text-vinilo-black mb-1">Envío Gratis</h4>
-                            <p className="text-[11px] text-gray-500">En pedidos superiores a $200.000 a nivel nacional.</p>
+                            <h4 className="text-xs font-bold uppercase text-vinilo-black mb-1">Envío Gratis & Pago Contraentrega</h4>
+                            <p className="text-[11px] text-gray-500">En pedidos superiores a $100.000 a nivel nacional.</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -161,7 +161,7 @@ const ProductPage = () => {
                         <ShieldCheck size={20} className="text-vinilo-black flex-shrink-0" />
                         <div>
                             <h4 className="text-xs font-bold uppercase text-vinilo-black mb-1">Garantía Vinilo</h4>
-                            <p className="text-[11px] text-gray-500">Productos 100% originales garantizados.</p>
+                            <p className="text-[11px] text-gray-500">Productos 99% de calidad garantizados.</p>
                         </div>
                     </div>
                 </div>

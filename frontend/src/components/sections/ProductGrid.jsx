@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom'; // 1. Importar Link
 import ProductCard from '../ui/ProductCard';
 
 const ProductGrid = ({ title, products }) => {
@@ -6,14 +7,19 @@ const ProductGrid = ({ title, products }) => {
     <section className="py-24 bg-white">
       <div className="container mx-auto px-6">
         
-        {/* Header */}
+        {/* Header con Enlace Funcional */}
         <div className="flex justify-between items-end mb-16 border-b border-gray-100 pb-4">
           <h2 className="font-serif text-3xl md:text-4xl text-vinilo-black">
             {title}<span className="text-vinilo-red">.</span>
           </h2>
-          <a href="#" className="hidden md:block font-sans text-xs font-bold uppercase tracking-widest text-vinilo-black hover:text-vinilo-red transition-colors">
+          
+          {/* 2. Usar Link hacia /catalogo */}
+          <Link 
+            to="/catalogo" 
+            className="hidden md:block font-sans text-xs font-bold uppercase tracking-widest text-vinilo-black hover:text-vinilo-red transition-colors"
+          >
             Ver Todos
-          </a>
+          </Link>
         </div>
 
         {/* Grid */}
@@ -26,8 +32,14 @@ const ProductGrid = ({ title, products }) => {
           ))}
         </div>
 
+        {/* Botón Móvil Funcional */}
         <div className="mt-12 text-center md:hidden">
-            <button className="text-xs border-b border-black pb-1 uppercase tracking-widest">Ver Todo</button>
+            <Link 
+                to="/catalogo"
+                className="text-xs border-b border-black pb-1 uppercase tracking-widest text-vinilo-black hover:text-vinilo-red hover:border-vinilo-red transition-colors"
+            >
+                Ver Todo
+            </Link>
         </div>
 
       </div>
