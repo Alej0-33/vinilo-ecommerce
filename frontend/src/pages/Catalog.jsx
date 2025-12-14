@@ -1,29 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
-import { SlidersHorizontal, ChevronDown, X, Check } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, X, Check, Loader2 } from 'lucide-react';
 
-// --- DATA ---
-const CATEGORIES = ["Botas", "Mocasines", "Sandalias", "Tenis"];
-const GENDERS = ["Hombre", "Mujer"]; // Nuevo filtro
-const SIZES = ["35", "36", "37", "38", "39", "40"];
-
-// Generador de datos simulados
-const mockCatalog = Array(24).fill(null).map((_, i) => ({
-  id: i + 10,
-  name: `Vinilo ${CATEGORIES[i % 4]} Ref. 0${i + 1}`,
-  price: 120000 + (Math.floor(Math.random() * 20) * 10000),
-  tag: i % 5 === 0 ? "New" : (i % 8 === 0 ? "Sale" : null),
-  gender: i % 2 === 0 ? 'hombre' : 'mujer',
-  category: CATEGORIES[i % 4],
-  sizes: ["36", "37", "38", "39"],
-  image: `https://images.unsplash.com/photo-${[
-      "1543163521-1bf539c55dd2", // Botas
-      "1614252235316-8c857d38b5f4", // Mocasines
-      "1562273138-f46be4ebdf6c", // Sandalias
-      "1560769629-975ec94e6a86"  // Tenis
-  ][i % 4]}?q=80&w=600&auto=format&fit=crop`
-}));
+// --- CONSTANTES UI ---
+const CATEGORIES = ["Nike", "Adidas", "Reebok", "Puma"]; // Esto en el backend se mapea a 'brand'
+const GENDERS = ["Hombre", "Mujer"];
+const SIZES = ["35", "36", "37", "38", "39", "40", "41", "42"];
 
 // --- DRAWER DE FILTROS ---
 const FilterSidebar = ({ isOpen, onClose, filters, setFilters, clearFilters, hasUrlGender }) => {
@@ -55,8 +38,7 @@ const FilterSidebar = ({ isOpen, onClose, filters, setFilters, clearFilters, has
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           
-          {/* 1. Género (Solo se muestra si NO hay un filtro fijo en la URL para evitar conflictos, 
-              o puedes dejarlo siempre visible si prefieres) */}
+          {/* 1. Género */}
           {!hasUrlGender && (
             <div>
                 <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-vinilo-black">Género</h3>
@@ -75,9 +57,9 @@ const FilterSidebar = ({ isOpen, onClose, filters, setFilters, clearFilters, has
             </div>
           )}
 
-          {/* 2. Categoría */}
+          {/* 2. Categoría (MARCA) */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-vinilo-black">Categoría</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-vinilo-black">Marca</h3>
             <div className="space-y-3">
               {CATEGORIES.map(cat => (
                 <label key={cat} className="flex items-center gap-3 cursor-pointer group">
@@ -132,69 +114,134 @@ const FilterSidebar = ({ isOpen, onClose, filters, setFilters, clearFilters, has
 // --- PAGE COMPONENT ---
 const Catalog = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const genderUrlParam = searchParams.get('genero'); // Parametro de URL (si venimos del header)
+  const genderUrlParam = searchParams.get('genero'); 
+
+  // --- ESTADOS BACKEND ---
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [activeSort, setActiveSort] = useState('relevance'); 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
 
-  // Estados de filtros locales (Sidebar)
+  // Estados de filtros locales
   const [localFilters, setLocalFilters] = useState({
     gender: [],
-    category: [],
+    category: [], // Se usará como BRAND
     sizes: []
   });
 
-  // LOGICA CENTRAL DE FILTRADO
+  // 1. FETCH API CON FILTROS (SERVER SIDE FILTERING)
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        // Construir URL base
+        const baseUrl = new URL('http://127.0.0.1:8000/api/products/');
+        
+        // A. Agregar Filtro de Género
+        if (genderUrlParam) {
+            // Prioridad a la URL
+            const g = genderUrlParam.toLowerCase() === 'hombre' ? 'M' : 'F';
+            baseUrl.searchParams.append('gender', g);
+        } else if (localFilters.gender.length > 0) {
+            // Filtro local del sidebar
+            localFilters.gender.forEach(g => {
+                const val = g === 'Hombre' ? 'M' : 'F';
+                baseUrl.searchParams.append('gender', val);
+            });
+        }
+
+        // B. Agregar Filtro de Marca (Usamos 'category' del state para filtrar 'brand' en backend)
+        if (localFilters.category.length > 0) {
+            localFilters.category.forEach(brand => {
+                // Django Filter es case-insensitive gracias a 'iexact' configurado
+                baseUrl.searchParams.append('brand', brand);
+            });
+        }
+
+        // C. Agregar Filtro de Talla
+        if (localFilters.sizes.length > 0) {
+            localFilters.sizes.forEach(size => {
+                // Django Filter buscará en variantes gracias a la configuración
+                baseUrl.searchParams.append('size', size);
+            });
+        }
+
+        // Realizar la petición
+        const response = await fetch(baseUrl.toString());
+        if (!response.ok) throw new Error('Error de conexión con el servidor');
+        
+        const data = await response.json();
+        setProducts(data);
+        setError(null);
+
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("No se pudieron cargar los productos.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [genderUrlParam, localFilters]); // Se ejecuta cada vez que cambian los filtros
+
+  // 2. LOGICA DE ORDENAMIENTO (Client Side Sorting)
+  // Nota: Ya no filtramos aquí porque el Backend entregó los datos filtrados. Solo ordenamos.
   const processedProducts = useMemo(() => {
-    let result = [...mockCatalog];
+    let result = [...products];
 
-    // 1. Filtro Género
-    // Prioridad: URL param > Filtro Local
-    if (genderUrlParam) {
-      result = result.filter(
-        p => p.gender && p.gender.toLowerCase() === genderUrlParam.toLowerCase()
-      );
-    } else if (localFilters.gender.length > 0) {
-      // Si no hay URL param, usamos el filtro del sidebar (permite multiselección: hombre OR mujer)
-      result = result.filter(p => localFilters.gender.some(g => g.toLowerCase() === p.gender.toLowerCase()));
-    }
-
-    // 2. Filtro Categoría
-    if (localFilters.category.length > 0) {
-      result = result.filter(p => localFilters.category.includes(p.category));
-    }
-
-    // 3. Filtro Tallas
-    if (localFilters.sizes.length > 0) {
-      result = result.filter(p => p.sizes.some(s => localFilters.sizes.includes(s)));
-    }
-
-    // 4. Ordenamiento
     if (activeSort === 'price-asc') {
-      result.sort((a, b) => a.price - b.price);
+      result.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
     } else if (activeSort === 'price-desc') {
-      result.sort((a, b) => b.price - a.price);
+      result.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
     }
 
     return result;
-  }, [genderUrlParam, localFilters, activeSort]);
+  }, [products, activeSort]);
 
 
+  // Helpers de filtros
   const clearAllFilters = () => {
       setLocalFilters({ gender: [], category: [], sizes: [] });
   };
-
+  
   const clearUrlFilter = () => {
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('genero');
     setSearchParams(newParams);
   }
-
+  
   const getActiveFiltersCount = () => {
-      // Si hay param URL no contamos el genero local para no confundir, o sumamos todo.
       return localFilters.gender.length + localFilters.category.length + localFilters.sizes.length;
   };
+
+  // --- RENDER DE CARGA O ERROR ---
+  if (loading) {
+      return (
+          <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+              <Loader2 className="animate-spin text-vinilo-red mb-2" size={40} />
+              <p className="text-xs uppercase tracking-widest text-gray-500">Cargando catálogo...</p>
+          </div>
+      );
+  }
+
+  if (error) {
+      return (
+          <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+              <p className="text-vinilo-red font-serif text-lg mb-4">Ups, ocurrió un error.</p>
+              <p className="text-gray-500 text-sm mb-6">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="bg-vinilo-black text-white px-6 py-2 text-xs font-bold uppercase tracking-widest"
+              >
+                  Recargar Página
+              </button>
+          </div>
+      );
+  }
 
   return (
     <div className="bg-white min-h-screen pb-24 relative">
@@ -207,7 +254,7 @@ const Catalog = () => {
             filters={localFilters}
             setFilters={setLocalFilters}
             clearFilters={clearAllFilters}
-            hasUrlGender={!!genderUrlParam} // Pasamos si hay un filtro de URL activo para ocultar esa sección si se desea
+            hasUrlGender={!!genderUrlParam}
         />
       )}
 
@@ -216,7 +263,6 @@ const Catalog = () => {
         <div className="flex flex-col items-center text-center py-12 border-b border-gray-100 animate-fade-in">
            <span className="text-vinilo-red text-xs font-bold uppercase tracking-widest mb-3">Colección 2025</span>
            
-           {/* Título Dinámico */}
            <h1 className="font-serif text-5xl md:text-7xl text-vinilo-black mb-4 capitalize">
              {genderUrlParam ? `Colección ${genderUrlParam}` : 'Catálogo Completo'}
            </h1>
@@ -246,7 +292,7 @@ const Catalog = () => {
                 )}
              </button>
 
-             {/* Chip para filtro de URL (si existe) */}
+             {/* Chip para filtro de URL */}
              {genderUrlParam && (
                <button 
                  onClick={clearUrlFilter}
@@ -257,7 +303,7 @@ const Catalog = () => {
              )}
 
              <span className="text-xs text-gray-400 hidden sm:block tracking-wide ml-2">
-                {processedProducts.length} Resultados
+                {products.length} Resultados
              </span>
           </div>
 
@@ -295,7 +341,7 @@ const Catalog = () => {
           </div>
         </div>
 
-        {/* Grid de Productos */}
+        {/* Grid de Productos Reales */}
         {processedProducts.length > 0 ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-12 md:gap-x-8 md:gap-y-16 animate-fade-in-up mt-8">
                 {processedProducts.map((product) => (
@@ -304,7 +350,7 @@ const Catalog = () => {
             </div>
         ) : (
             <div className="flex flex-col items-center justify-center py-32 border border-dashed border-gray-200 mt-8">
-                <p className="text-gray-400 text-lg font-serif italic mb-4">No se encontraron productos.</p>
+                <p className="text-gray-400 text-lg font-serif italic mb-4">No se encontraron productos con estos filtros.</p>
                 <button 
                     onClick={() => { clearAllFilters(); clearUrlFilter(); }} 
                     className="text-xs font-bold uppercase tracking-widest border-b border-vinilo-red pb-0.5 hover:text-vinilo-red transition-colors"
@@ -314,12 +360,11 @@ const Catalog = () => {
             </div>
         )}
 
-        {/* Load More */}
-        {processedProducts.length > 0 && (
+        {/* Botón Cargar Más */}
+        {processedProducts.length > 8 && (
             <div className="mt-24 text-center">
-                <button className="px-12 py-4 border border-gray-200 text-vinilo-black text-xs font-bold uppercase tracking-[0.2em] hover:bg-vinilo-black hover:text-white hover:border-vinilo-black transition-all duration-300">
-                    Cargar más
-                </button>
+                <p className="text-[10px] text-gray-400 mb-2">Has visto todos los productos disponibles</p>
+                <div className="w-12 h-[1px] bg-gray-200 mx-auto"></div>
             </div>
         )}
       </div>

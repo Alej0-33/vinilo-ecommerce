@@ -1,11 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 import Button from './Button';
-import { useCart } from '../../context/CartContext'; // Importar Contexto
+import { useCart } from '../../context/CartContext';
 
 const CartDrawer = ({ isOpen, onClose }) => {
-  // Usar datos reales del contexto
+  const navigate = useNavigate(); 
   const { cartItems, removeFromCart, updateQuantity, cartTotal } = useCart();
+
+  const handleGoToCheckout = () => {
+    onClose(); 
+    navigate('/checkout'); 
+  };
 
   return (
     <>
@@ -44,54 +50,26 @@ const CartDrawer = ({ isOpen, onClose }) => {
           ) : (
             cartItems.map((item) => (
               <div key={`${item.id}-${item.selectedSize}`} className="flex gap-4 animate-fade-in">
+                {/* ... (el contenido de los items sigue igual) ... */}
                 <div className="w-24 h-32 bg-gray-50 flex-shrink-0 relative">
-                   <img 
-                      src={item.image} 
-                      alt={item.name} 
-                      className="w-full h-full object-cover" 
-                   />
+                   <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                 </div>
                 
                 <div className="flex-1 flex flex-col justify-between py-1">
                   <div>
                     <div className="flex justify-between items-start gap-2">
-                      <h3 className="font-serif text-base leading-tight text-vinilo-black line-clamp-2">
-                        {item.name}
-                      </h3>
-                      <button 
-                        onClick={() => removeFromCart(item.id, item.selectedSize)} 
-                        className="text-gray-400 hover:text-vinilo-red transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <h3 className="font-serif text-base leading-tight text-vinilo-black line-clamp-2">{item.name}</h3>
+                      <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="text-gray-400 hover:text-vinilo-red transition-colors"><Trash2 size={16} /></button>
                     </div>
-                    {item.selectedSize && (
-                      <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">
-                        Talla: {item.selectedSize}
-                      </p>
-                    )}
+                    {item.selectedSize && <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">Talla: {item.selectedSize}</p>}
                   </div>
-                  
                   <div className="flex justify-between items-end">
                     <div className="flex items-center border border-gray-200">
-                      <button 
-                        onClick={() => updateQuantity(item.id, item.selectedSize, item.quantity - 1)}
-                        className="p-1.5 hover:bg-gray-50 disabled:opacity-30 transition-colors"
-                        disabled={item.quantity <= 1}
-                      >
-                        <Minus size={12} />
-                      </button>
+                      <button onClick={() => updateQuantity(item.id, item.selectedSize, item.quantity - 1)} className="p-1.5 hover:bg-gray-50 disabled:opacity-30 transition-colors" disabled={item.quantity <= 1}><Minus size={12} /></button>
                       <span className="w-8 text-center text-xs font-bold text-vinilo-black">{item.quantity}</span>
-                      <button 
-                        onClick={() => updateQuantity(item.id, item.selectedSize, item.quantity + 1)}
-                        className="p-1.5 hover:bg-gray-50 transition-colors"
-                      >
-                        <Plus size={12} />
-                      </button>
+                      <button onClick={() => updateQuantity(item.id, item.selectedSize, item.quantity + 1)} className="p-1.5 hover:bg-gray-50 transition-colors"><Plus size={12} /></button>
                     </div>
-                    <p className="font-bold text-sm text-vinilo-black">
-                      ${(item.price * item.quantity).toLocaleString()}
-                    </p>
+                    <p className="font-bold text-sm text-vinilo-black">${(item.price * item.quantity).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -99,7 +77,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        {/* Footer / Totales (Solo visible si hay items) */}
+        {/* Footer / Totales */}
         {cartItems.length > 0 && (
           <div className="p-6 bg-white border-t border-gray-100 shadow-[0_-5px_20px_-10px_rgba(0,0,0,0.1)]">
             <div className="flex justify-between items-center mb-4">
@@ -111,9 +89,17 @@ const CartDrawer = ({ isOpen, onClose }) => {
             <p className="text-[10px] text-gray-400 mb-6 text-center">
               Impuestos y gastos de envío calculados en el checkout.
             </p>
-            <Button variant="primary" size="full" className="flex items-center justify-center gap-2 group">
+            
+            {/* 4. Asignar el evento onClick al botón */}
+            <Button 
+                variant="primary" 
+                size="full" 
+                onClick={handleGoToCheckout} 
+                className="flex items-center justify-center gap-2 group"
+            >
               Ir a Pagar <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </Button>
+
           </div>
         )}
       </div>

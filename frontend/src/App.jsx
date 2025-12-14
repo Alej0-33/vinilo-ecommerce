@@ -7,6 +7,8 @@ import Layout from './components/layout/layout';
 // Páginas
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
+import Checkout from './pages/Checkout'; 
+import ProductPage from './pages/ProductPage'; 
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
             
             {/* Otras rutas */}
             <Route path="catalogo" element={<Catalog />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="product/:id" element={<ProductPage />} /> 
             
             {/* Redirección por defecto */}
             <Route path="*" element={<Navigate to="/" replace />} />

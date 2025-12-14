@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{# 1. Cargar tu CSS Personalizado #}
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/vinilo_theme.css' %}">
+{% endblock %}
+
+{# 2. Cambiar el título de la pestaña del navegador #}
+{% block title %}
+    Administración Vinilo Platform
+{% endblock %}
+
+{# 3. Cambiar el Texto del Branding (Esquina superior izquierda) #}
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        VINILO<span style="color: #8B1A1A;">.</span> Platform
+    </a>
+</h1>
+{% endblock %}
+
+{# 4. Personalizar Footer (Opcional) #}
+{% block footer %}
+    <div id="footer" style="padding: 20px; text-align: center; color: #999; font-family: 'Inter', sans-serif; font-size: 11px; text-transform: uppercase;">
+        Vinilo Platform Backend &copy; 2025
+    </div>
+{% endblock %}
