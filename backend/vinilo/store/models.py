@@ -3,6 +3,55 @@ from django.contrib.auth.models import User
 import uuid
 from django.core.validators import MinValueValidator, MaxValueValidator 
 
+# --- MODELO DE CONFIGURACIÓN DE TIENDA (SINGLETON) ---
+class StoreConfig(models.Model):
+    """
+    Configuración global de la tienda. Solo debe existir UNA instancia.
+    """
+    shipping_cost_cod = models.DecimalField(
+        max_digits=10, 
+        decimal_places=0, 
+        default=15000,
+        verbose_name="Costo de Envío (Contraentrega)",
+        help_text="Costo en COP. Poner 0 para envío gratis."
+    )
+    free_shipping_threshold = models.DecimalField(
+        max_digits=10, 
+        decimal_places=0, 
+        null=True, 
+        blank=True,
+        verbose_name="Envío gratis desde",
+        help_text="Monto mínimo de compra para envío gratis. Dejar vacío para desactivar."
+    )
+    is_cod_enabled = models.BooleanField(
+        default=True, 
+        verbose_name="Contraentrega Habilitado"
+    )
+    is_wompi_enabled = models.BooleanField(
+        default=False, 
+        verbose_name="Wompi Habilitado"
+    )
+    
+    class Meta:
+        verbose_name = "Configuración de Tienda"
+        verbose_name_plural = "Configuración de Tienda"
+
+    def __str__(self):
+        return "Configuración General"
+
+    def save(self, *args, **kwargs):
+        # Singleton: Solo permitir una instancia
+        if not self.pk and StoreConfig.objects.exists():
+            raise ValueError("Solo puede existir una configuración de tienda.")
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_config(cls):
+        """Obtiene o crea la configuración singleton"""
+        config, created = cls.objects.get_or_create(pk=1)
+        return config
+
+
 class Product(models.Model):
     GENDER_CHOICES = [('M', 'Hombre'), ('F', 'Mujer'), ('U', 'Unisex')]
     BRAND_CHOICES = [
@@ -29,6 +78,7 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.brand} {self.name}"
 
+
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to='products/gallery/', verbose_name="Imagen")
@@ -40,6 +90,7 @@ class ProductImage(models.Model):
     def __str__(self):
         return f"Imagen para {self.product.name}"
 
+
 class Variant(models.Model):
     product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
     size = models.CharField(max_length=10, verbose_name="Talla", help_text="Ej: 38, 40, S, M")
@@ -50,7 +101,8 @@ class Variant(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - Talla {self.size}"
-# --- MODELO DE RESEÑAS ---
+
+
 class Review(models.Model):
     product = models.ForeignKey(
         'Product', 
@@ -58,14 +110,11 @@ class Review(models.Model):
         on_delete=models.CASCADE, 
         verbose_name="Producto Asociado"
     )
-    
     author_name = models.CharField(max_length=100, verbose_name="Nombre Cliente")
-    
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name="Calificación"
     )
-    
     comment = models.TextField(verbose_name="Comentario")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
     is_visible = models.BooleanField(default=True, verbose_name="Visible")
@@ -77,6 +126,8 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Reseña de {self.author_name} para {self.product.name}"
+
+
 class Order(models.Model):
     PAYMENT_METHOD_CHOICES = [('COD', 'Contraentrega'), ('WOMPI', 'Wompi - Tarjeta/PSE')]
     STATUS_CHOICES = [
@@ -103,6 +154,8 @@ class Order(models.Model):
     notes = models.TextField(blank=True, null=True, verbose_name="Notas del Pedido")
     
     # Financiero
+    subtotal = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Subtotal")
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=0, default=0, verbose_name="Costo de Envío")
     total_amount = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Total a Pagar")
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='COD', verbose_name="Método de Pago")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING', verbose_name="Estado")
@@ -122,6 +175,7 @@ class Order(models.Model):
     def __str__(self):
         return f"Pedido #{str(self.id)[:8]} - {self.customer_name}"
 
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product_name = models.CharField(max_length=200, verbose_name="Producto") 
@@ -138,13 +192,14 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.quantity}x {self.product_name}"
 
+
 class WishlistItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist')
-    product = models.ForeignKey('Product', on_delete=models.CASCADE) # String reference si está en el mismo archivo abajo
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'product') # Evita duplicados (un usuario no puede likear el mismo producto 2 veces)
+        unique_together = ('user', 'product')
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"

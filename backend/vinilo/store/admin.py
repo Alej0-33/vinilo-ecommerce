@@ -1,13 +1,49 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, Variant, Order, OrderItem, ProductImage, Review
+from .models import Product, Variant, Order, OrderItem, ProductImage, Review, StoreConfig
 
 # --- HELPER PARA MONEDA COP ---
 def format_cop(value):
-    """Convierte 150000 -> $ 150.000"""
     if value is None:
         return "$ 0"
     return f"$ {value:,.0f}".replace(",", ".")
+
+
+# --- CONFIGURACIÓN DE TIENDA (SINGLETON) ---
+@admin.register(StoreConfig)
+class StoreConfigAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'shipping_cost_display', 'free_shipping_display', 'is_cod_enabled', 'is_wompi_enabled')
+    
+    fieldsets = (
+        ('Métodos de Pago', {
+            'fields': ('is_cod_enabled', 'is_wompi_enabled'),
+            'description': 'Activa o desactiva los métodos de pago disponibles.'
+        }),
+        ('Configuración de Envío', {
+            'fields': ('shipping_cost_cod', 'free_shipping_threshold'),
+            'description': 'Configura el costo de envío. Pon 0 en "Costo de Envío" para envío gratis siempre.'
+        }),
+    )
+
+    def shipping_cost_display(self, obj):
+        if obj.shipping_cost_cod == 0:
+            return format_html('<span style="color: green; font-weight: bold;">GRATIS</span>')
+        return format_cop(obj.shipping_cost_cod)
+    shipping_cost_display.short_description = "Costo Envío"
+
+    def free_shipping_display(self, obj):
+        if obj.free_shipping_threshold:
+            return f"Gratis desde {format_cop(obj.free_shipping_threshold)}"
+        return "No aplica"
+    free_shipping_display.short_description = "Envío Gratis"
+
+    def has_add_permission(self, request):
+        # Solo permitir una instancia
+        return not StoreConfig.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 # --- INLINES ---
 
@@ -18,6 +54,7 @@ class VariantInline(admin.TabularInline):
     verbose_name = "Talla"
     verbose_name_plural = "Gestionar Tallas"
 
+
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
@@ -27,14 +64,14 @@ class ProductImageInline(admin.TabularInline):
 
     def image_preview(self, obj):
         if obj.image:
-             return format_html('<img src="{}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;" />', obj.image.url)
+            return format_html('<img src="{}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;" />', obj.image.url)
         return ""
     image_preview.short_description = "Vista Previa"
+
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    # Agregamos 'price_fmt' al readonly
     readonly_fields = ('product_thumbnail', 'product_name', 'size', 'quantity', 'price_fmt')
     can_delete = False
     verbose_name = "Producto comprado"
@@ -48,9 +85,8 @@ class OrderItemInline(admin.TabularInline):
     price_fmt.short_description = "Precio Unit."
 
     def product_thumbnail(self, obj):
-        # Intenta mostrar la foto del producto original si aun existe
         if obj.product and obj.product.image:
-             return format_html('<img src="{}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" />', obj.product.image.url)
+            return format_html('<img src="{}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" />', obj.product.image.url)
         return "N/A"
     product_thumbnail.short_description = "Foto"
 
@@ -66,7 +102,6 @@ class ProductAdmin(admin.ModelAdmin):
     search_fields = ('name', 'brand', 'description')
     list_per_page = 20
     
-    # Orden del formulario
     fieldsets = (
         ('Información Principal', {
             'fields': ('name', 'brand', 'price', 'gender', 'description')
@@ -91,26 +126,26 @@ class ProductAdmin(admin.ModelAdmin):
     price_cop.short_description = "Precio"
     price_cop.admin_order_field = 'price'
 
+
 # --- ORDER ADMIN ---
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
     
-    # === AQUÍ ESTABA EL ERROR ===
-    # 'status' debe estar aquí si está en list_editable
     list_display = (
         'id_short', 
         'date_formatted', 
         'customer_info', 
-        'status',           # <--- CAMBIADO (antes decía status_translated)
+        'status',
         'payment_method', 
+        'subtotal_cop',
+        'shipping_cop',
         'total_amount_cop',   
         'shipping_company', 
         'tracking_number'
     )
     
-    # Esto habilita el dropdown en la lista para cambiar estado rápido
     list_editable = ('status', 'shipping_company', 'tracking_number')
 
     list_filter = (
@@ -124,7 +159,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Resumen y Estado', {
-            'fields': ('id', 'created_at', 'status', 'total_amount_cop_readonly')
+            'fields': ('id', 'created_at', 'status')
         }),
         ('Datos del Cliente', {
             'fields': (('customer_name', 'customer_id_number'), ('customer_email', 'customer_phone'))
@@ -135,18 +170,14 @@ class OrderAdmin(admin.ModelAdmin):
         ('Logística (Despachos)', {
             'fields': (('shipping_company', 'tracking_number'),),
             'classes': ('wide',),
-            'description': "Ingrese aquí los datos de la transportadora una vez despachado el pedido."
         }),
         ('Detalles Financieros', {
-            'fields': ('payment_method', 'wompi_transaction_id', 'total_amount'),
+            'fields': ('payment_method', 'subtotal', 'shipping_cost', 'total_amount', 'wompi_transaction_id'),
             'classes': ('collapse',),
-            'description': "Información técnica del pago."
         }),
     )
 
-    readonly_fields = ('id', 'created_at', 'total_amount_cop_readonly')
-
-    # --- FUNCIONES VISUALES ---
+    readonly_fields = ('id', 'created_at', 'subtotal', 'shipping_cost', 'total_amount')
 
     def id_short(self, obj):
         return str(obj.id)[:8].upper()
@@ -154,30 +185,33 @@ class OrderAdmin(admin.ModelAdmin):
 
     def date_formatted(self, obj):
         return obj.created_at.strftime("%d/%m/%Y %H:%M")
-    date_formatted.short_description = "Fecha Compra"
+    date_formatted.short_description = "Fecha"
 
     def customer_info(self, obj):
         return format_html("<b>{}</b><br><span style='color: #888;'>{}</span>", obj.customer_name, obj.city)
-    customer_info.short_description = "Cliente / Ciudad"
+    customer_info.short_description = "Cliente"
+
+    def subtotal_cop(self, obj):
+        return format_cop(obj.subtotal)
+    subtotal_cop.short_description = "Subtotal"
+
+    def shipping_cop(self, obj):
+        if obj.shipping_cost == 0:
+            return format_html('<span style="color: green;">GRATIS</span>')
+        return format_cop(obj.shipping_cost)
+    shipping_cop.short_description = "Envío"
 
     def total_amount_cop(self, obj):
         return format_cop(obj.total_amount)
     total_amount_cop.short_description = "Total"
     total_amount_cop.admin_order_field = 'total_amount'
 
-    def total_amount_cop_readonly(self, obj):
-        return format_cop(obj.total_amount)
-    total_amount_cop_readonly.short_description = "Total a Pagar (COP)"
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    # Agregamos 'product' a la lista para saber de qué zapato hablan
     list_display = ('author_name', 'rating_stars', 'product', 'created_at', 'is_visible')
-    
-    # Filtros laterales para ver reseñas por producto o calificación
     list_filter = ('product', 'rating', 'is_visible', 'created_at')
-    
-    search_fields = ('author_name', 'comment', 'product__name') # Buscar por nombre de producto también
+    search_fields = ('author_name', 'comment', 'product__name')
     list_editable = ('is_visible',)
 
     def rating_stars(self, obj):

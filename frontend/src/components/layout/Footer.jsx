@@ -53,9 +53,9 @@ const Footer = () => {
           <div className="md:col-span-2">
             <h4 className="font-serif text-lg mb-6 text-white">Explorar</h4>
             <ul className="space-y-3 font-sans text-xs tracking-wider text-gray-400">
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Novedades</a></li>
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Mas Vendidos</a></li>
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Calzado</a></li>
+              <li><a href="/catalogo" className="hover:text-vinilo-red transition-colors">Novedades</a></li>
+              <li><a href="/catalogo" className="hover:text-vinilo-red transition-colors">Mas Vendidos</a></li>
+              <li><a href="/catalogo" className="hover:text-vinilo-red transition-colors">Calzado</a></li>
             </ul>
           </div>
 
@@ -63,10 +63,9 @@ const Footer = () => {
           <div className="md:col-span-2">
             <h4 className="font-serif text-lg mb-6 text-white">Ayuda</h4>
             <ul className="space-y-3 font-sans text-xs tracking-wider text-gray-400">
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Rastrear Pedido</a></li>
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Cambios y Devoluciones</a></li>
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Guía de Tallas</a></li>
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Contáctanos</a></li>
+              <li><a href="/tracking" className="hover:text-vinilo-red transition-colors">Rastrear Pedido</a></li>
+              <li><a href="/contact" className="hover:text-vinilo-red transition-colors">Cambios y Devoluciones</a></li>
+              <li><a href="/contact" className="hover:text-vinilo-red transition-colors">Contáctanos</a></li>
             </ul>
           </div>
 
@@ -74,10 +73,8 @@ const Footer = () => {
           <div className="md:col-span-3">
             <h4 className="font-serif text-lg mb-6 text-white">Legal</h4>
             <ul className="space-y-3 font-sans text-xs tracking-wider text-gray-400">
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Términos y Condiciones</a></li>
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Política de Privacidad</a></li>
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Tratamiento de Datos</a></li>
-              <li><a href="#" className="hover:text-vinilo-red transition-colors">Superintendencia</a></li>
+              <li><a href="/terms-conditions" className="hover:text-vinilo-red transition-colors">Términos y Condiciones</a></li>
+              <li><a href="/privacy-policy" className="hover:text-vinilo-red transition-colors">Política de Privacidad</a></li>
             </ul>
           </div>
         </div>

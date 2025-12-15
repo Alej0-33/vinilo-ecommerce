@@ -5,19 +5,22 @@ from .views import (
     OrderViewSet, 
     ReviewViewSet, 
     WishlistView, 
-    ToggleWishlistView
+    ToggleWishlistView,
+    get_store_config
 )
 
 router = DefaultRouter()
-router.register(r'products', ProductViewSet) # http://localhost:8000/api/products/
-router.register(r'orders', OrderViewSet)     # http://localhost:8000/api/orders/
-router.register(r'reviews', ReviewViewSet) 
+router.register(r'products', ProductViewSet)
+router.register(r'orders', OrderViewSet)
+router.register(r'reviews', ReviewViewSet)
 
 urlpatterns = [
-    # Rutas generadas por el Router (ViewSets)
     path('', include(router.urls)),
-
-    # Rutas manuales para la Wishlist (APIViews)
+    
+    # Configuración de tienda
+    path('config/', get_store_config, name='store-config'),
+    
+    # Wishlist
     path('wishlist/', WishlistView.as_view(), name='wishlist-list'),
     path('wishlist/toggle/<uuid:product_id>/', ToggleWishlistView.as_view(), name='wishlist-toggle'),
 ]
