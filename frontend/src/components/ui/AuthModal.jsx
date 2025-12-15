@@ -1,42 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { X, Eye, EyeOff, Mail, Lock, User, CheckCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext'; 
+import { X, Mail, Lock, User, CheckCircle, ArrowLeft, Send, Eye, EyeOff, LogOut, UserCircle, Package, Settings, Save, AlertCircle, Heart } from 'lucide-react';
 import Button from './Button';
 
-// --- Sub-componente para Inputs Reutilizables ---
-const InputField = ({ 
-  type = "text", 
-  placeholder, 
-  icon: Icon, 
-  id,
-  required = false 
-}) => {
+// ----------------------------------------------------------------------
+// 1. SUB-COMPONENTES (Inputs)
+// ----------------------------------------------------------------------
+
+const InputField = ({ type = "text", placeholder, icon: Icon, value, onChange, required = false, disabled = false }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const isPasswordType = type === "password";
-
-  // Determinar el tipo real del input (texto o password según el toggle)
   const inputType = isPasswordType ? (showPassword ? "text" : "password") : type;
 
   return (
     <div className={`relative group transition-all duration-300 ${isFocused ? 'scale-[1.01]' : ''}`}>
-      {/* Icono Izquierdo */}
       <div className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-300 ${isFocused ? 'text-vinilo-red' : 'text-gray-400'}`}>
         <Icon size={18} strokeWidth={1.5} />
       </div>
-
       <input
-        id={id}
         type={inputType}
+        value={value}
+        onChange={onChange}
         required={required}
+        disabled={disabled}
         placeholder={placeholder}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`w-full bg-gray-50 border border-gray-200 py-3.5 pl-10 pr-10 text-sm outline-none transition-all duration-300 placeholder-gray-400
-          text-vinilo-black rounded-none
-          focus:bg-white focus:border-vinilo-red focus:ring-1 focus:ring-vinilo-red/20`}
+        className={`w-full bg-gray-50 border border-gray-200 py-3.5 pl-10 pr-10 text-sm outline-none transition-all duration-300 placeholder-gray-400 text-vinilo-black rounded-none 
+        focus:bg-white focus:border-vinilo-red focus:ring-1 focus:ring-vinilo-red/20
+        disabled:opacity-60 disabled:cursor-not-allowed`}
       />
-
-      {/* Toggle Password (Icono Derecho) */}
       {isPasswordType && (
         <button
           type="button"
@@ -51,160 +45,407 @@ const InputField = ({
   );
 };
 
-// --- Componente Principal ---
+// ----------------------------------------------------------------------
+// 2. VISTAS INTERNAS
+// ----------------------------------------------------------------------
+
+const ProfileView = ({ user, onChangeView, onLogout }) => (
+  <div className="p-8">
+    <div className="text-center mb-8">
+      <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200">
+        <UserCircle size={48} className="text-gray-400" strokeWidth={1} />
+      </div>
+      <h3 className="font-serif text-2xl text-vinilo-black italic mb-1">
+        Hola, {user?.first_name || user?.name || 'Usuario'}
+      </h3>
+      <p className="text-xs text-gray-400 font-sans tracking-wide">{user?.email}</p>
+    </div>
+
+    <div className="space-y-3">
+      {/* Botón Mis Datos */}
+      <button 
+        onClick={() => onChangeView('edit-profile')}
+        className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
+      >
+        <div className="flex items-center gap-3">
+          <Settings size={18} className="text-vinilo-black" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black">Mis Datos</p>
+            <p className="text-[10px] text-gray-400">Actualizar nombre y correo</p>
+          </div>
+        </div>
+        <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
+      </button>
+
+      {/* Botón Mis Pedidos */}
+      <button className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left">
+        <div className="flex items-center gap-3">
+          <Package size={18} className="text-vinilo-black" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black">Mis Pedidos</p>
+            <p className="text-[10px] text-gray-400">Ver historial de compras</p>
+          </div>
+        </div>
+        <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
+      </button>
+
+      {/* --- NUEVO BOTÓN: WISHLIST --- */}
+      <button 
+        onClick={() => {
+            // Aquí puedes usar navigate('/account/wishlist') si usas React Router
+            window.location.href = '/account/wishlist'; 
+        }}
+        className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
+      >
+        <div className="flex items-center gap-3">
+          <Heart size={18} className="text-vinilo-black group-hover:text-vinilo-red transition-colors" />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black group-hover:text-vinilo-red transition-colors">Wishlist</p>
+            <p className="text-[10px] text-gray-400">Mis favoritos guardados</p>
+          </div>
+        </div>
+        <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
+      </button>
+    </div>
+
+    <div className="mt-8 pt-6 border-t border-gray-100">
+      <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-vinilo-red hover:bg-red-50 transition-all border border-transparent hover:border-red-100">
+        <LogOut size={16} /> Cerrar Sesión
+      </button>
+    </div>
+  </div>
+);
+
+const EditProfileView = ({ formData, setFormData, onSubmit, loading, error, success, onBack }) => (
+  <div className="p-8">
+    <div className="mb-6 relative text-center">
+      <button onClick={onBack} className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-vinilo-black transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest">
+        <ArrowLeft size={14} /> Volver
+      </button>
+      <h3 className="font-serif text-2xl text-vinilo-black italic">Editar Datos</h3>
+    </div>
+
+    {success && <div className="mb-4 p-3 bg-green-50 text-green-700 text-xs text-center font-bold flex items-center justify-center gap-2"><CheckCircle size={14} /> {success}</div>}
+    {error && <div className="mb-4 p-3 bg-red-50 text-red-500 text-xs text-center font-bold">{error}</div>}
+
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <InputField icon={User} placeholder="Nombre" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required />
+        <InputField icon={User} placeholder="Apellido" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required />
+      </div>
+      <InputField icon={Mail} type="email" placeholder="Correo electrónico" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
+      <div className="pt-2">
+        <Button variant="primary" size="full" type="submit" disabled={loading}>
+          {loading ? 'Guardando...' : <span className="flex items-center gap-2 justify-center"><Save size={14}/> Guardar Cambios</span>}
+        </Button>
+      </div>
+    </form>
+  </div>
+);
+
+// ----------------------------------------------------------------------
+// 3. COMPONENTE PRINCIPAL (Contenedor Lógico)
+// ----------------------------------------------------------------------
+
 const AuthModal = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState('login');
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, register, recoverPassword, updateProfile, logout, user, isAuthenticated, error: authError } = useAuth();
+  
+  const [activeView, setActiveView] = useState('login'); 
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  
+  // Agregado confirmPassword al estado inicial
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
 
-  // Resetear estados al cerrar
   useEffect(() => {
-    if (!isOpen) {
-      setIsLoading(false);
+    if (isOpen) {
+        setInternalLoading(false);
+        setErrorMsg('');
+        
+        if (isAuthenticated) {
+            setActiveView('profile');
+            setFormData({
+                firstName: user?.first_name || '',
+                lastName: user?.last_name || '',
+                email: user?.email || '',
+                password: '',
+                confirmPassword: ''
+            });
+        } else {
+            if (activeView !== 'login' || !successMsg) {
+                setActiveView('login');
+                setFormData({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
+                setSuccessMsg('');
+            }
+        }
     }
-  }, [isOpen]);
+  }, [isOpen, isAuthenticated, user]);
 
-  const handleSubmit = (e) => {
+  // Manejo de cambio de pestaña (cancela proceso si hay carga activa)
+  const handleTabChange = (targetView) => {
+    if (activeView === targetView) return;
+
+    if (internalLoading) {
+        setInternalLoading(false); 
+        const action = activeView === 'login' ? 'el inicio de sesión' : 'el registro';
+        setErrorMsg(`Proceso interrumpido. Se canceló ${action}.`);
+        setSuccessMsg('');
+        return; 
+    }
+
+    setActiveView(targetView);
+    setSuccessMsg('');
+    setErrorMsg('');
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulación de petición al backend
-    setTimeout(() => {
-      setIsLoading(false);
-      // Aquí iría la lógica de éxito
-    }, 2000);
+    setInternalLoading(true);
+    setErrorMsg('');
+    
+    if (activeView !== 'edit-profile') setSuccessMsg('');
+
+    // --- NUEVA VALIDACIÓN: Contraseñas coinciden ---
+    if (activeView === 'register') {
+      if (formData.password !== formData.confirmPassword) {
+        setErrorMsg('Las contraseñas no coinciden.');
+        setInternalLoading(false);
+        return;
+      }
+    }
+
+    // Pequeña referencia local para saber si el usuario canceló durante el await
+    let cancelled = false;
+    const cancelCheck = setInterval(() => {
+        if (!internalLoading) cancelled = true;
+    }, 100);
+
+    let result;
+
+    try {
+        if (activeView === 'login') {
+            result = await login(formData.email, formData.password);
+            if (!cancelled && result && result.success) onClose();
+        } 
+        else if (activeView === 'register') {
+            result = await register(formData);
+            if (!cancelled && result && result.success) {
+                setSuccessMsg('Cuenta creada exitosamente. Por favor inicia sesión.');
+                setActiveView('login');
+                // Limpiamos pass y confirmPass
+                setFormData(prev => ({...prev, password: '', confirmPassword: ''})); 
+            }
+        } 
+        else if (activeView === 'recovery') {
+            result = await recoverPassword(formData.email);
+            if (!cancelled && result?.success) {
+                setSuccessMsg('Te hemos enviado un enlace de recuperación a tu correo.');
+            }
+        }
+        else if (activeView === 'edit-profile') {
+            result = await updateProfile(formData);
+            if (!cancelled && result?.success) {
+                setSuccessMsg('Información actualizada correctamente.');
+                setTimeout(() => { if(!cancelled) setActiveView('profile'); setSuccessMsg(''); }, 1500);
+            }
+        }
+
+        if (!cancelled && internalLoading) {
+            if (result && !result.success) {
+                setErrorMsg(result.message || authError || "Ocurrió un error inesperado.");
+            }
+        }
+
+    } catch (err) {
+        if (!cancelled) setErrorMsg("Error de conexión. Intenta nuevamente.");
+    } finally {
+        clearInterval(cancelCheck);
+        setInternalLoading(false); 
+    }
+  };
+
+  const handleLogout = () => {
+      logout();
+      onClose();
   };
 
   if (!isOpen) return null;
 
+  if (isAuthenticated && activeView === 'profile') {
+      return (
+        <ModalWrapper onClose={onClose}>
+            <ProfileView user={user} onChangeView={setActiveView} onLogout={handleLogout} />
+        </ModalWrapper>
+      );
+  }
+
+  if (isAuthenticated && activeView === 'edit-profile') {
+      return (
+        <ModalWrapper onClose={onClose}>
+            <EditProfileView 
+                formData={formData} 
+                setFormData={setFormData} 
+                onSubmit={handleSubmit} 
+                loading={internalLoading} 
+                error={errorMsg} 
+                success={successMsg}
+                onBack={() => setActiveView('profile')} 
+            />
+        </ModalWrapper>
+      );
+  }
+
+  // Renderizar Vistas Guest (Login/Registro)
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop con Blur */}
-      <div 
-        className="absolute inset-0 bg-vinilo-black/60 backdrop-blur-sm transition-opacity" 
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-white w-full max-w-md shadow-2xl overflow-hidden flex flex-col z-10 animate-fade-in-up">
-        
-        {/* Botón Cerrar Flotante */}
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 z-20 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-vinilo-black transition-all duration-300"
-        >
-          <X size={20} />
-        </button>
+    <ModalWrapper onClose={onClose}>
+        {/* Navegación Tabs */}
+        {activeView !== 'recovery' && (
+          <div className="flex border-b border-gray-100">
+            <button 
+                onClick={() => handleTabChange('login')} 
+                className={`flex-1 py-5 text-xs font-bold uppercase tracking-widest transition-all relative ${activeView === 'login' ? 'text-vinilo-red bg-white' : 'text-gray-400 bg-gray-50 hover:text-vinilo-black'}`}
+            >
+              Ingresar
+              {activeView === 'login' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinilo-red animate-scale-in" />}
+            </button>
+            <button 
+                onClick={() => handleTabChange('register')} 
+                className={`flex-1 py-5 text-xs font-bold uppercase tracking-widest transition-all relative ${activeView === 'register' ? 'text-vinilo-red bg-white' : 'text-gray-400 bg-gray-50 hover:text-vinilo-black'}`}
+            >
+              Registrarse
+              {activeView === 'register' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinilo-red animate-scale-in" />}
+            </button>
+          </div>
+        )}
 
-        {/* Encabezado Tabs */}
-        <div className="flex border-b border-gray-100">
-          <button 
-            onClick={() => setActiveTab('login')}
-            className={`flex-1 py-5 text-xs font-bold uppercase tracking-widest transition-all duration-300 relative
-              ${activeTab === 'login' ? 'text-vinilo-red bg-white' : 'text-gray-400 bg-gray-50 hover:text-vinilo-black'}`}
-          >
-            Ingresar
-            {activeTab === 'login' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinilo-red animate-scale-in" />}
-          </button>
-          <button 
-            onClick={() => setActiveTab('register')}
-            className={`flex-1 py-5 text-xs font-bold uppercase tracking-widest transition-all duration-300 relative
-              ${activeTab === 'register' ? 'text-vinilo-red bg-white' : 'text-gray-400 bg-gray-50 hover:text-vinilo-black'}`}
-          >
-            Registrarse
-            {activeTab === 'register' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-vinilo-red animate-scale-in" />}
-          </button>
-        </div>
-
-        {/* Contenido */}
         <div className="p-8 md:p-10">
-          <div className="text-center mb-8">
-            <h3 className="font-serif text-2xl md:text-3xl text-vinilo-black italic mb-2">
-              {activeTab === 'login' ? 'Bienvenido de nuevo' : 'Únete al Club Vinilo'}
-            </h3>
-            <p className="text-xs text-gray-400 font-sans tracking-wide">
-              {activeTab === 'login' 
-                ? 'Ingresa tus credenciales para acceder a tu cuenta.' 
-                : 'Crea una cuenta y obtén 10% OFF en tu primera compra.'}
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {activeTab === 'register' && (
-              <div className="grid grid-cols-2 gap-4 animate-fade-in">
-                 <InputField icon={User} placeholder="Nombre" required />
-                 <InputField icon={User} placeholder="Apellido" required />
-              </div>
-            )}
-
-            <InputField type="email" icon={Mail} placeholder="Correo electrónico" required />
-            <InputField type="password" icon={Lock} placeholder="Contraseña" required />
-
-            {/* Opciones Adicionales Login */}
-            {activeTab === 'login' && (
-              <div className="flex justify-between items-center text-xs pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer text-gray-500 hover:text-vinilo-black transition-colors group">
-                      <div className="relative flex items-center">
-                        <input type="checkbox" className="peer appearance-none w-4 h-4 border border-gray-300 rounded-sm checked:bg-vinilo-red checked:border-vinilo-red transition-all cursor-pointer" />
-                        <CheckCircle size={10} className="absolute text-white opacity-0 peer-checked:opacity-100 pointer-events-none top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                      </div>
-                      <span className="group-hover:underline decoration-gray-300 underline-offset-4">Recordarme</span>
-                  </label>
-                  <a href="#" className="text-gray-400 hover:text-vinilo-red transition-colors underline decoration-1 underline-offset-2">
-                    ¿Olvidaste tu contraseña?
-                  </a>
-              </div>
-            )}
-
-            {/* Botón Principal con Loading */}
-            <div className="pt-2">
-                <Button 
-                  variant="primary" 
-                  size="full" 
-                  type="submit" 
-                  disabled={isLoading}
-                  className={`relative ${isLoading ? 'opacity-90 cursor-not-allowed' : ''}`}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                       <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                       <span>Procesando...</span>
-                    </div>
-                  ) : (
-                    activeTab === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'
-                  )}
-                </Button>
+            <div className="text-center mb-6 relative">
+                {activeView === 'recovery' && (
+                    <button onClick={() => { setActiveView('login'); setSuccessMsg(''); setErrorMsg(''); }} className="absolute -top-2 left-0 text-gray-400 hover:text-vinilo-black transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest">
+                        <ArrowLeft size={14} /> Volver
+                    </button>
+                )}
+                <h3 className="font-serif text-2xl md:text-3xl text-vinilo-black italic mb-2 mt-4 md:mt-0">
+                    {activeView === 'login' ? 'Bienvenido de nuevo' : activeView === 'register' ? 'Únete al Club Vinilo' : 'Recuperar Contraseña'}
+                </h3>
+                <p className="text-xs text-gray-400 font-sans tracking-wide px-4 leading-relaxed">
+                    {activeView === 'login' ? 'Ingresa tus credenciales para acceder.' : activeView === 'register' ? 'Crea una cuenta y obtén beneficios.' : 'Ingresa tu email para recuperarla.'}
+                </p>
             </div>
-          </form>
 
-          {/* Separador */}
-          <div className="relative flex items-center gap-3 my-8">
-            <div className="h-px bg-gray-100 flex-1"></div>
-            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">O continúa con</span>
-            <div className="h-px bg-gray-100 flex-1"></div>
-          </div>
+            {/* Alertas */}
+            {errorMsg && (
+                <div className={`mb-4 p-3 border text-xs text-center font-bold animate-fade-in flex items-center justify-center gap-2 ${errorMsg.includes('interrumpido') ? 'bg-orange-50 border-orange-100 text-orange-600' : 'bg-red-50 border-red-100 text-red-500'}`}>
+                    {errorMsg.includes('interrumpido') && <AlertCircle size={16} />}
+                    {errorMsg}
+                </div>
+            )}
+            
+            {successMsg && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-100 text-green-700 text-xs text-center font-bold flex flex-col items-center justify-center gap-2 animate-fade-in">
+                    <span className="flex items-center gap-2"><CheckCircle size={16} /> {successMsg}</span>
+                    {activeView === 'recovery' && (
+                        <button onClick={onClose} className="mt-2 underline text-[10px] hover:text-black">Cerrar</button>
+                    )}
+                </div>
+            )}
 
-          {/* Botones Sociales */}
-          <div className="grid grid-cols-2 gap-3">
-             <button className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all text-xs font-bold text-gray-600 rounded-none group">
-                <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.766 12.2764C23.766 11.4607 23.6999 10.6406 23.5588 9.83807H12.24V14.4591H18.7217C18.4528 15.9494 17.5885 17.2678 16.323 18.1056V21.1039H20.19C22.4608 19.0139 23.766 15.9274 23.766 12.2764Z" fill="#4285F4"/><path d="M12.2401 24.0008C15.4766 24.0008 18.2059 22.9382 20.1945 21.1039L16.3275 18.1055C15.2517 18.8375 13.8627 19.252 12.2445 19.252C9.11388 19.252 6.45946 17.1399 5.50705 14.3003H1.5166V17.3912C3.55371 21.4434 7.7029 24.0008 12.2401 24.0008Z" fill="#34A853"/><path d="M5.50253 14.3003C5.00236 12.8199 5.00236 11.1799 5.50253 9.69951V6.60864H1.5166C-0.18551 10.0056 -0.18551 14.0004 1.5166 17.3912L5.50253 14.3003Z" fill="#FBBC05"/><path d="M12.2401 4.74966C13.9509 4.7232 15.6044 5.36697 16.8434 6.54867L20.2695 3.12262C18.1001 1.0855 15.2208 -0.034466 12.2401 0.000808666C7.7029 0.000808666 3.55371 2.55822 1.5166 6.60864L5.50253 9.69951C6.45064 6.86154 9.10947 4.74966 12.2401 4.74966Z" fill="#EA4335"/></svg>
-                Google
-             </button>
-             <button className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:border-[#1877F2] hover:text-[#1877F2] hover:bg-[#1877F2]/5 transition-all text-xs font-bold text-gray-600 rounded-none group">
-                <svg className="w-4 h-4 text-[#1877F2] group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
-                Facebook
-             </button>
-          </div>
+            {/* Formulario Guest */}
+            {!(activeView === 'recovery' && successMsg) && (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    
+                    {activeView === 'register' && (
+                        <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                            <InputField icon={User} placeholder="Nombre" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required />
+                            <InputField icon={User} placeholder="Apellido" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required />
+                        </div>
+                    )}
 
-          {activeTab === 'register' && (
-             <p className="mt-6 text-center text-[10px] text-gray-400 px-4 leading-tight">
-                Al registrarte aceptas nuestros <a href="#" className="underline hover:text-vinilo-black">Términos y Condiciones</a> y <a href="#" className="underline hover:text-vinilo-black">Política de Privacidad</a>.
-             </p>
-          )}
+                    <InputField icon={Mail} type="email" placeholder="Correo electrónico" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
 
+                    {activeView !== 'recovery' && (
+                        <>
+                          <InputField 
+                            icon={Lock} 
+                            type="password" 
+                            placeholder="Contraseña" 
+                            value={formData.password} 
+                            onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                            required 
+                          />
+
+                          {/* CAMPO DE CONFIRMACIÓN DE CONTRASEÑA (SOLO REGISTRO) */}
+                          {activeView === 'register' && (
+                            <div className="animate-fade-in">
+                              <InputField 
+                                icon={Lock} 
+                                type="password" 
+                                placeholder="Confirmar contraseña" 
+                                value={formData.confirmPassword} 
+                                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
+                                required 
+                              />
+                            </div>
+                          )}
+                        </>
+                    )}
+
+                    {activeView === 'login' && (
+                        <div className="flex justify-end text-xs pt-1">
+                            <button type="button" onClick={() => setActiveView('recovery')} className="text-gray-400 hover:text-vinilo-red transition-colors underline decoration-1 underline-offset-2">¿Olvidaste tu contraseña?</button>
+                        </div>
+                    )}
+
+                    <div className="pt-2">
+                        <Button variant="primary" size="full" type="submit" disabled={internalLoading} className={`relative ${internalLoading ? 'opacity-90 cursor-not-allowed' : ''}`}>
+                            {internalLoading ? (
+                                <div className="flex items-center gap-2 justify-center"><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Procesando...</div>
+                            ) : (
+                                activeView === 'login' ? 'Iniciar Sesión' : activeView === 'register' ? 'Crear Cuenta' : 'Enviar Correo'
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            )}
+
+            {/* Social Buttons */}
+            {activeView !== 'recovery' && !successMsg && (
+                <div className="animate-fade-in mt-6">
+                    <div className="relative flex items-center gap-3 mb-6">
+                        <div className="h-px bg-gray-100 flex-1"></div>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">O continúa con</span>
+                        <div className="h-px bg-gray-100 flex-1"></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button type="button" onClick={() => alert('Próximamente')} className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all text-xs font-bold text-gray-600 rounded-none group">
+                            <span className="font-serif italic font-bold text-lg group-hover:scale-110 transition-transform">G</span> <span className="hidden sm:inline">Google</span>
+                        </button>
+                        <button type="button" onClick={() => alert('Próximamente')} className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:border-[#1877F2] hover:bg-[#1877F2]/5 hover:text-[#1877F2] transition-all text-xs font-bold text-gray-600 rounded-none group">
+                            <span className="font-serif italic font-bold text-lg group-hover:scale-110 transition-transform">F</span> <span className="hidden sm:inline">Facebook</span>
+                        </button>
+                    </div>
+                    {activeView === 'register' && (
+                        <p className="mt-6 text-center text-[10px] text-gray-400 px-4 leading-tight">
+                            Al registrarte aceptas nuestros <a href="#" className="underline hover:text-vinilo-black">Términos</a> y <a href="#" className="underline hover:text-vinilo-black">Política de Privacidad</a>.
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };
+
+// Wrapper auxiliar
+const ModalWrapper = ({ children, onClose }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-vinilo-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+        <div className="relative bg-white w-full max-w-md shadow-2xl overflow-hidden flex flex-col z-10 animate-fade-in-up">
+            <button onClick={onClose} className="absolute top-4 right-4 z-20 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-vinilo-black transition-colors"><X size={20} /></button>
+            {children}
+        </div>
+    </div>
+);
 
 export default AuthModal;

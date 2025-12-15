@@ -138,7 +138,7 @@ const Catalog = () => {
       setLoading(true);
       try {
         // Construir URL base
-        const baseUrl = new URL('http://127.0.0.1:8000/api/products/');
+        const baseUrl = new URL('http://127.0.0.1:8000/api/store/products/');
         
         // A. Agregar Filtro de Género
         if (genderUrlParam) {

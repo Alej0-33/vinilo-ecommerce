@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { ChevronLeft, Star, ShoppingBag, Truck, ShieldCheck, RefreshCw } from 'lucide-react';
 import Button from '../components/ui/Button';
+import ReviewForm from '../components/ui/ReviewForm';
 
 const ProductPage = () => {
   const { id } = useParams(); // Obtenemos el ID de la URL
@@ -17,7 +18,7 @@ const ProductPage = () => {
   useEffect(() => {
     const fetchProductDetail = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/products/${id}/`);
+        const response = await fetch(`http://127.0.0.1:8000/api/store/products/${id}/`);
         if (!response.ok) throw new Error('Producto no encontrado');
         const data = await response.json();
         setProduct(data);
@@ -167,6 +168,9 @@ const ProductPage = () => {
                 </div>
 
             </div>
+        </div>
+        <div className="border-t border-gray-100">
+            {product && <ReviewForm productId={product.id} />}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, Variant, Order, OrderItem, ProductImage
+from .models import Product, Variant, Order, OrderItem, ProductImage, Review
 
 # --- HELPER PARA MONEDA COP ---
 def format_cop(value):
@@ -168,3 +168,18 @@ class OrderAdmin(admin.ModelAdmin):
     def total_amount_cop_readonly(self, obj):
         return format_cop(obj.total_amount)
     total_amount_cop_readonly.short_description = "Total a Pagar (COP)"
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    # Agregamos 'product' a la lista para saber de qué zapato hablan
+    list_display = ('author_name', 'rating_stars', 'product', 'created_at', 'is_visible')
+    
+    # Filtros laterales para ver reseñas por producto o calificación
+    list_filter = ('product', 'rating', 'is_visible', 'created_at')
+    
+    search_fields = ('author_name', 'comment', 'product__name') # Buscar por nombre de producto también
+    list_editable = ('is_visible',)
+
+    def rating_stars(self, obj):
+        return "★" * obj.rating
+    rating_stars.short_description = "Estrellas"

@@ -1,5 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
 import uuid
+from django.core.validators import MinValueValidator, MaxValueValidator 
 
 class Product(models.Model):
     GENDER_CHOICES = [('M', 'Hombre'), ('F', 'Mujer'), ('U', 'Unisex')]
@@ -48,7 +50,33 @@ class Variant(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - Talla {self.size}"
+# --- MODELO DE RESEÑAS ---
+class Review(models.Model):
+    product = models.ForeignKey(
+        'Product', 
+        related_name='reviews', 
+        on_delete=models.CASCADE, 
+        verbose_name="Producto Asociado"
+    )
+    
+    author_name = models.CharField(max_length=100, verbose_name="Nombre Cliente")
+    
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name="Calificación"
+    )
+    
+    comment = models.TextField(verbose_name="Comentario")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
+    is_visible = models.BooleanField(default=True, verbose_name="Visible")
 
+    class Meta:
+        verbose_name = "Reseña"
+        verbose_name_plural = "Reseñas"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Reseña de {self.author_name} para {self.product.name}"
 class Order(models.Model):
     PAYMENT_METHOD_CHOICES = [('COD', 'Contraentrega'), ('WOMPI', 'Wompi - Tarjeta/PSE')]
     STATUS_CHOICES = [
@@ -109,3 +137,14 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity}x {self.product_name}"
+
+class WishlistItem(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE) # String reference si está en el mismo archivo abajo
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product') # Evita duplicados (un usuario no puede likear el mismo producto 2 veces)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name}"
