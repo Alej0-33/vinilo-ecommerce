@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext'; 
-import { X, Mail, Lock, User, CheckCircle, ArrowLeft, Send, Eye, EyeOff, LogOut, UserCircle, Package, Settings, Save, AlertCircle, Heart } from 'lucide-react';
+import { X, Mail, Lock, User, CheckCircle, ArrowLeft, Send, Eye, EyeOff, LogOut, UserCircle, Package, Settings, Save, AlertCircle, Heart, KeyRound } from 'lucide-react';
 import Button from './Button';
 
 // ----------------------------------------------------------------------
@@ -89,10 +89,9 @@ const ProfileView = ({ user, onChangeView, onLogout }) => (
         <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
       </button>
 
-      {/* --- NUEVO BOTÓN: WISHLIST --- */}
+      {/* Botón Wishlist */}
       <button 
         onClick={() => {
-            // Aquí puedes usar navigate('/account/wishlist') si usas React Router
             window.location.href = '/account/wishlist'; 
         }}
         className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
@@ -148,20 +147,26 @@ const EditProfileView = ({ formData, setFormData, onSubmit, loading, error, succ
 // ----------------------------------------------------------------------
 
 const AuthModal = ({ isOpen, onClose }) => {
-  const { login, register, recoverPassword, updateProfile, logout, user, isAuthenticated, error: authError } = useAuth();
+  const { login, register, verifyEmail, recoverPassword, updateProfile, logout, user, isAuthenticated, error: authError } = useAuth();
   
   const [activeView, setActiveView] = useState('login'); 
   const [internalLoading, setInternalLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   
-  // Agregado confirmPassword al estado inicial
+  // Estado para verificación de Email (OTP)
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
 
+  // Reset al abrir el modal
   useEffect(() => {
     if (isOpen) {
         setInternalLoading(false);
         setErrorMsg('');
+        setIsVerifying(false); // Reseteamos la vista de verificación
+        setOtpCode('');
         
         if (isAuthenticated) {
             setActiveView('profile');
@@ -197,6 +202,7 @@ const AuthModal = ({ isOpen, onClose }) => {
     setActiveView(targetView);
     setSuccessMsg('');
     setErrorMsg('');
+    setIsVerifying(false);
   };
 
   const handleSubmit = async (e) => {
@@ -207,7 +213,7 @@ const AuthModal = ({ isOpen, onClose }) => {
     if (activeView !== 'edit-profile') setSuccessMsg('');
 
     // --- NUEVA VALIDACIÓN: Contraseñas coinciden ---
-    if (activeView === 'register') {
+    if (activeView === 'register' && !isVerifying) {
       if (formData.password !== formData.confirmPassword) {
         setErrorMsg('Las contraseñas no coinciden.');
         setInternalLoading(false);
@@ -215,52 +221,57 @@ const AuthModal = ({ isOpen, onClose }) => {
       }
     }
 
-    // Pequeña referencia local para saber si el usuario canceló durante el await
-    let cancelled = false;
-    const cancelCheck = setInterval(() => {
-        if (!internalLoading) cancelled = true;
-    }, 100);
-
-    let result;
-
     try {
         if (activeView === 'login') {
-            result = await login(formData.email, formData.password);
-            if (!cancelled && result && result.success) onClose();
+            const result = await login(formData.email, formData.password);
+            if (result && result.success) onClose();
+            else if (result) setErrorMsg(result.message);
         } 
         else if (activeView === 'register') {
-            result = await register(formData);
-            if (!cancelled && result && result.success) {
-                setSuccessMsg('Cuenta creada exitosamente. Por favor inicia sesión.');
-                setActiveView('login');
-                // Limpiamos pass y confirmPass
-                setFormData(prev => ({...prev, password: '', confirmPassword: ''})); 
+            // Caso 1: Enviar Registro Inicial
+            if (!isVerifying) {
+                const result = await register(formData);
+                if (result.success && result.needVerification) {
+                    // Si el backend pide verificación, cambiamos el estado
+                    setIsVerifying(true);
+                    setSuccessMsg(`Hemos enviado un código de verificación a ${formData.email}`);
+                } else if (!result.success) {
+                    setErrorMsg(result.message);
+                }
+            } 
+            // Caso 2: Verificar Código OTP
+            else {
+                const result = await verifyEmail(formData.email, otpCode);
+                if (result.success) {
+                    setSuccessMsg('Cuenta verificada exitosamente. Iniciando sesión...');
+                    // Login automático tras verificar
+                    await login(formData.email, formData.password);
+                    onClose();
+                } else {
+                    setErrorMsg(result.message || 'Código incorrecto');
+                }
             }
         } 
         else if (activeView === 'recovery') {
-            result = await recoverPassword(formData.email);
-            if (!cancelled && result?.success) {
+            const result = await recoverPassword(formData.email);
+            if (result?.success) {
                 setSuccessMsg('Te hemos enviado un enlace de recuperación a tu correo.');
+            } else {
+                setErrorMsg('Error al procesar la solicitud.');
             }
         }
         else if (activeView === 'edit-profile') {
-            result = await updateProfile(formData);
-            if (!cancelled && result?.success) {
+            const result = await updateProfile(formData);
+            if (result?.success) {
                 setSuccessMsg('Información actualizada correctamente.');
-                setTimeout(() => { if(!cancelled) setActiveView('profile'); setSuccessMsg(''); }, 1500);
+                setTimeout(() => { setActiveView('profile'); setSuccessMsg(''); }, 1500);
+            } else {
+                setErrorMsg(result.message || "Error al actualizar.");
             }
         }
-
-        if (!cancelled && internalLoading) {
-            if (result && !result.success) {
-                setErrorMsg(result.message || authError || "Ocurrió un error inesperado.");
-            }
-        }
-
     } catch (err) {
-        if (!cancelled) setErrorMsg("Error de conexión. Intenta nuevamente.");
+        setErrorMsg("Error de conexión. Intenta nuevamente.");
     } finally {
-        clearInterval(cancelCheck);
         setInternalLoading(false); 
     }
   };
@@ -272,6 +283,7 @@ const AuthModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  // Render Perfil
   if (isAuthenticated && activeView === 'profile') {
       return (
         <ModalWrapper onClose={onClose}>
@@ -280,6 +292,7 @@ const AuthModal = ({ isOpen, onClose }) => {
       );
   }
 
+  // Render Editar Perfil
   if (isAuthenticated && activeView === 'edit-profile') {
       return (
         <ModalWrapper onClose={onClose}>
@@ -296,11 +309,12 @@ const AuthModal = ({ isOpen, onClose }) => {
       );
   }
 
-  // Renderizar Vistas Guest (Login/Registro)
+  // Render Vistas Guest (Login / Registro / OTP / Recuperación)
   return (
     <ModalWrapper onClose={onClose}>
-        {/* Navegación Tabs */}
-        {activeView !== 'recovery' && (
+        
+        {/* Navegación Tabs (oculta si estamos verificando o recuperando) */}
+        {activeView !== 'recovery' && !isVerifying && (
           <div className="flex border-b border-gray-100">
             <button 
                 onClick={() => handleTabChange('login')} 
@@ -320,29 +334,49 @@ const AuthModal = ({ isOpen, onClose }) => {
         )}
 
         <div className="p-8 md:p-10">
+            {/* Encabezado Dinámico */}
             <div className="text-center mb-6 relative">
-                {activeView === 'recovery' && (
-                    <button onClick={() => { setActiveView('login'); setSuccessMsg(''); setErrorMsg(''); }} className="absolute -top-2 left-0 text-gray-400 hover:text-vinilo-black transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest">
+                {(activeView === 'recovery' || isVerifying) && (
+                    <button 
+                        onClick={() => { 
+                            if(isVerifying) setIsVerifying(false); 
+                            else { setActiveView('login'); setSuccessMsg(''); setErrorMsg(''); } 
+                        }} 
+                        className="absolute -top-2 left-0 text-gray-400 hover:text-vinilo-black transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest"
+                    >
                         <ArrowLeft size={14} /> Volver
                     </button>
                 )}
+                
                 <h3 className="font-serif text-2xl md:text-3xl text-vinilo-black italic mb-2 mt-4 md:mt-0">
-                    {activeView === 'login' ? 'Bienvenido de nuevo' : activeView === 'register' ? 'Únete al Club Vinilo' : 'Recuperar Contraseña'}
+                    {isVerifying 
+                        ? 'Verifica tu Email' 
+                        : activeView === 'login' 
+                            ? 'Bienvenido de nuevo' 
+                            : activeView === 'register' 
+                                ? 'Únete al Club Vinilo' 
+                                : 'Recuperar Contraseña'}
                 </h3>
+                
                 <p className="text-xs text-gray-400 font-sans tracking-wide px-4 leading-relaxed">
-                    {activeView === 'login' ? 'Ingresa tus credenciales para acceder.' : activeView === 'register' ? 'Crea una cuenta y obtén beneficios.' : 'Ingresa tu email para recuperarla.'}
+                    {isVerifying 
+                        ? 'Ingresa el código de 6 dígitos que enviamos a tu correo.'
+                        : activeView === 'login' 
+                            ? 'Ingresa tus credenciales para acceder.' 
+                            : activeView === 'register' 
+                                ? 'Crea una cuenta y obtén beneficios.' 
+                                : 'Ingresa tu email para recibir el enlace.'}
                 </p>
             </div>
 
             {/* Alertas */}
             {errorMsg && (
-                <div className={`mb-4 p-3 border text-xs text-center font-bold animate-fade-in flex items-center justify-center gap-2 ${errorMsg.includes('interrumpido') ? 'bg-orange-50 border-orange-100 text-orange-600' : 'bg-red-50 border-red-100 text-red-500'}`}>
-                    {errorMsg.includes('interrumpido') && <AlertCircle size={16} />}
-                    {errorMsg}
+                <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-500 text-xs text-center font-bold flex items-center justify-center gap-2 animate-fade-in">
+                    <AlertCircle size={16} /> {errorMsg}
                 </div>
             )}
             
-            {successMsg && (
+            {successMsg && !isVerifying && (
                 <div className="mb-4 p-3 bg-green-50 border border-green-100 text-green-700 text-xs text-center font-bold flex flex-col items-center justify-center gap-2 animate-fade-in">
                     <span className="flex items-center gap-2"><CheckCircle size={16} /> {successMsg}</span>
                     {activeView === 'recovery' && (
@@ -352,84 +386,95 @@ const AuthModal = ({ isOpen, onClose }) => {
             )}
 
             {/* Formulario Guest */}
-            {!(activeView === 'recovery' && successMsg) && (
+            {!(activeView === 'recovery' && successMsg && !errorMsg) && (
                 <form onSubmit={handleSubmit} className="space-y-4">
                     
-                    {activeView === 'register' && (
-                        <div className="grid grid-cols-2 gap-4 animate-fade-in">
-                            <InputField icon={User} placeholder="Nombre" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required />
-                            <InputField icon={User} placeholder="Apellido" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required />
-                        </div>
-                    )}
-
-                    <InputField icon={Mail} type="email" placeholder="Correo electrónico" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
-
-                    {activeView !== 'recovery' && (
-                        <>
-                          <InputField 
-                            icon={Lock} 
-                            type="password" 
-                            placeholder="Contraseña" 
-                            value={formData.password} 
-                            onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                            required 
-                          />
-
-                          {/* CAMPO DE CONFIRMACIÓN DE CONTRASEÑA (SOLO REGISTRO) */}
-                          {activeView === 'register' && (
-                            <div className="animate-fade-in">
-                              <InputField 
-                                icon={Lock} 
-                                type="password" 
-                                placeholder="Confirmar contraseña" 
-                                value={formData.confirmPassword} 
-                                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
-                                required 
-                              />
+                    {/* VISTA: OTP VERIFICATION */}
+                    {isVerifying ? (
+                        <div className="animate-fade-in space-y-4">
+                            <div className="p-3 bg-blue-50 text-blue-700 text-xs text-center rounded">
+                                Enviamos el código a <b>{formData.email}</b>
                             </div>
-                          )}
+                            <InputField 
+                                icon={KeyRound} 
+                                type="text"
+                                placeholder="Código de 6 dígitos (Ej: 123456)" 
+                                value={otpCode} 
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '').slice(0,6);
+                                    setOtpCode(val);
+                                }} 
+                                required 
+                            />
+                        </div>
+                    ) : (
+                        /* VISTAS: LOGIN / REGISTER / RECOVERY */
+                        <>
+                            {activeView === 'register' && (
+                                <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                                    <InputField icon={User} placeholder="Nombre" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required />
+                                    <InputField icon={User} placeholder="Apellido" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required />
+                                </div>
+                            )}
+
+                            <InputField icon={Mail} type="email" placeholder="Correo electrónico" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
+
+                            {activeView !== 'recovery' && (
+                                <>
+                                <InputField 
+                                    icon={Lock} 
+                                    type="password" 
+                                    placeholder="Contraseña" 
+                                    value={formData.password} 
+                                    onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                                    required 
+                                />
+
+                                {activeView === 'register' && (
+                                    <div className="animate-fade-in">
+                                    <InputField 
+                                        icon={Lock} 
+                                        type="password" 
+                                        placeholder="Confirmar contraseña" 
+                                        value={formData.confirmPassword} 
+                                        onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
+                                        required 
+                                    />
+                                    </div>
+                                )}
+                                </>
+                            )}
                         </>
                     )}
 
-                    {activeView === 'login' && (
+                    {/* Link recuperación (solo login) */}
+                    {!isVerifying && activeView === 'login' && (
                         <div className="flex justify-end text-xs pt-1">
                             <button type="button" onClick={() => setActiveView('recovery')} className="text-gray-400 hover:text-vinilo-red transition-colors underline decoration-1 underline-offset-2">¿Olvidaste tu contraseña?</button>
                         </div>
                     )}
 
+                    {/* Botón Acción Principal */}
                     <div className="pt-2">
                         <Button variant="primary" size="full" type="submit" disabled={internalLoading} className={`relative ${internalLoading ? 'opacity-90 cursor-not-allowed' : ''}`}>
                             {internalLoading ? (
                                 <div className="flex items-center gap-2 justify-center"><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Procesando...</div>
                             ) : (
-                                activeView === 'login' ? 'Iniciar Sesión' : activeView === 'register' ? 'Crear Cuenta' : 'Enviar Correo'
+                                isVerifying 
+                                    ? 'Verificar Cuenta' 
+                                    : activeView === 'login' ? 'Iniciar Sesión' : activeView === 'register' ? 'Registrarse' : 'Enviar Correo'
                             )}
                         </Button>
                     </div>
                 </form>
             )}
 
-            {/* Social Buttons */}
-            {activeView !== 'recovery' && !successMsg && (
+            {/* Términos y Condiciones (Solo para Registro) */}
+            {activeView === 'register' && !isVerifying && !successMsg && (
                 <div className="animate-fade-in mt-6">
-                    <div className="relative flex items-center gap-3 mb-6">
-                        <div className="h-px bg-gray-100 flex-1"></div>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">O continúa con</span>
-                        <div className="h-px bg-gray-100 flex-1"></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <button type="button" onClick={() => alert('Próximamente')} className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all text-xs font-bold text-gray-600 rounded-none group">
-                            <span className="font-serif italic font-bold text-lg group-hover:scale-110 transition-transform">G</span> <span className="hidden sm:inline">Google</span>
-                        </button>
-                        <button type="button" onClick={() => alert('Próximamente')} className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 hover:border-[#1877F2] hover:bg-[#1877F2]/5 hover:text-[#1877F2] transition-all text-xs font-bold text-gray-600 rounded-none group">
-                            <span className="font-serif italic font-bold text-lg group-hover:scale-110 transition-transform">F</span> <span className="hidden sm:inline">Facebook</span>
-                        </button>
-                    </div>
-                    {activeView === 'register' && (
-                        <p className="mt-6 text-center text-[10px] text-gray-400 px-4 leading-tight">
-                            Al registrarte aceptas nuestros <a href="#" className="underline hover:text-vinilo-black">Términos</a> y <a href="#" className="underline hover:text-vinilo-black">Política de Privacidad</a>.
-                        </p>
-                    )}
+                    <p className="text-center text-[10px] text-gray-400 px-4 leading-tight">
+                        Al registrarte aceptas nuestros <a href="/terms-conditions" className="underline hover:text-vinilo-black">Términos</a> y <a href="/privacy-policy" className="underline hover:text-vinilo-black">Política de Privacidad</a>.
+                    </p>
                 </div>
             )}
         </div>

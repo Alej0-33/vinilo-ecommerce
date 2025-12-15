@@ -44,14 +44,18 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
-  // --- 2. LOGIN ---
+  // --- 2. LOGIN (SANITIZADO) ---
   const login = async (email, password) => {
     setError(null);
+    
+    // Sanitización: quitar espacios y minúsculas
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
         const response = await fetch(`${BASE_URL}/auth/login/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: email, password }) 
+            body: JSON.stringify({ username: cleanEmail, password }) 
         });
 
         const data = await response.json();
@@ -72,17 +76,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // --- 3. REGISTER ---
+  // --- 3. REGISTER (SANITIZADO) ---
   const register = async (userData) => {
     setError(null);
     try {
-        // Django requiere 'username'. Usamos el email como username.
+        // Sanitización de datos antes de enviar
         const payload = {
-            username: userData.email,
-            email: userData.email,
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            password: userData.password
+            username: userData.email.trim().toLowerCase(), // Django requiere username
+            email: userData.email.trim().toLowerCase(),
+            first_name: userData.firstName.trim(),
+            last_name: userData.lastName.trim(),
+            password: userData.password // La contraseña NO se toca (espacios pueden ser válidos)
         };
 
         const response = await fetch(`${BASE_URL}/auth/register/`, {
@@ -94,14 +98,15 @@ export const AuthProvider = ({ children }) => {
         const data = await response.json();
 
         if (response.ok) {
-            await login(userData.email, userData.password);
-            return { success: true };
+            // Retornamos success y una bandera para pedir el código OTP.
+            return { success: true, needVerification: true, email: payload.email };
         } else {
-            // Manejo detallado de errores del serializer
             let msg = "Error en el registro";
+            // Manejo de errores de validación de Django
             if (data.username) msg = `Usuario: ${data.username[0]}`;
             else if (data.email) msg = `Email: ${data.email[0]}`;
             else if (data.password) msg = `Contraseña: ${data.password[0]}`;
+            else if (data.detail) msg = data.detail;
             
             setError(msg);
             return { success: false, message: msg };
@@ -111,7 +116,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // --- 4. ACTUALIZAR PERFIL ---
+  // --- 4. VERIFICAR EMAIL (SANITIZADO) ---
+  const verifyEmail = async (email, code) => {
+      setError(null);
+      // Sanitización
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanCode = code.trim();
+
+      try {
+          const response = await fetch(`${BASE_URL}/auth/register/verify/`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: cleanEmail, code: cleanCode })
+          });
+          
+          const data = await response.json();
+          if (response.ok) {
+              return { success: true };
+          } else {
+              return { success: false, message: data.error || "Código inválido" };
+          }
+      } catch (err) {
+          return { success: false, message: "Error de conexión" };
+      }
+  };
+
+  // --- 5. ACTUALIZAR PERFIL (SANITIZADO) ---
   const updateProfile = async (userData) => {
     setError(null);
     const token = localStorage.getItem('access_token');
@@ -120,22 +150,22 @@ export const AuthProvider = ({ children }) => {
 
     try {
         const response = await fetch(`${BASE_URL}/auth/me/`, {
-            method: 'PATCH', // Actualización parcial
+            method: 'PATCH',
             headers: { 
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}` 
             },
             body: JSON.stringify({
-                first_name: userData.firstName,
-                last_name: userData.lastName,
-                email: userData.email
+                first_name: userData.firstName.trim(),
+                last_name: userData.lastName.trim(),
+                email: userData.email.trim().toLowerCase()
             })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            setUser(data); // Actualizamos el estado local con los nuevos datos
+            setUser(data);
             return { success: true };
         } else {
             let msg = "No se pudo actualizar.";
@@ -147,7 +177,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // --- 5. REFRESH TOKEN ---
+  // --- 6. REFRESH TOKEN ---
   const refreshToken = async () => {
       const refresh = localStorage.getItem('refresh_token');
       if (!refresh) {
@@ -175,7 +205,7 @@ export const AuthProvider = ({ children }) => {
       }
   };
 
-  // --- 6. LOGOUT ---
+  // --- 7. LOGOUT ---
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
@@ -183,26 +213,49 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
-  // --- 7. PASSWORD RECOVERY ---
+  // --- 8. SOLICITUD RECUPERAR PASSWORD (SANITIZADO) ---
   const recoverPassword = async (email) => {
-      // Simulado por ahora, requiere endpoint Django
-      return { success: true };
+      const cleanEmail = email.trim().toLowerCase();
+      try {
+          const response = await fetch(`${BASE_URL}/auth/password-reset/`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: cleanEmail })
+          });
+          // Retornamos true si es 200 OK
+          return { success: response.ok }; 
+      } catch (err) {
+          return { success: false, message: "Error al intentar recuperar contraseña" };
+      }
   };
 
-  // --- 8. SOCIAL LOGIN ---
-  const socialLogin = async (provider, token) => {
-      alert("Configuración backend requerida");
+  // --- 9. CONFIRMAR NUEVA PASSWORD ---
+  const confirmPasswordReset = async (uid, token, password) => {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/password-reset/confirm/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid, token, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            return { success: true };
+        } else {
+            return { success: false, message: data.error || data.detail || "Error al restablecer" };
+        }
+    } catch (err) {
+        return { success: false, message: "Error de conexión" };
+    }
   };
 
-  // --- 9. WISHLIST TOGGLE (NUEVO) ---
+  // --- 10. WISHLIST TOGGLE ---
   const toggleWishlist = async (productId) => {
     const token = localStorage.getItem('access_token');
-    
-    // Si no está logueado, retornamos error auth_required
     if (!token) return { success: false, error: 'auth_required' };
 
     try {
-        // La URL debe coincidir con la de urls.py. Usualmente en store.
         const response = await fetch(`${BASE_URL}/store/wishlist/toggle/${productId}/`, {
             method: 'POST',
             headers: { 
@@ -213,7 +266,6 @@ export const AuthProvider = ({ children }) => {
 
         if (response.ok) {
             const data = await response.json();
-            // Retorna: { success: true, action: 'added' | 'removed' }
             return { success: true, action: data.status }; 
         } else {
             return { success: false, error: 'api_error' };
@@ -230,11 +282,12 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     register,
+    verifyEmail,
     updateProfile,
     logout,
     recoverPassword,
-    socialLogin,
-    toggleWishlist // Exportamos la nueva función aquí
+    confirmPasswordReset,
+    toggleWishlist
   };
 
   return (

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.throttling import ScopedRateThrottle
 from django_filters import rest_framework as django_filters
 from .models import Product, Order, Review, WishlistItem, StoreConfig
 from .serializers import (
@@ -12,9 +13,9 @@ from .serializers import (
     OrderCreateSerializer,
     ReviewSerializer, 
     WishlistItemSerializer,
-    StoreConfigSerializer
+    StoreConfigSerializer,
+    OrderTrackingSerializer
 )
-
 
 # --- FILTRO PERSONALIZADO ---
 class ProductFilter(django_filters.FilterSet):
@@ -32,7 +33,8 @@ class ProductFilter(django_filters.FilterSet):
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
-    queryset = Product.objects.all().order_by('-created_at').distinct()
+    # OPTIMIZACIÓN SQL: prefetch_related reduce drásticamente las consultas a la BD
+    queryset = Product.objects.all().prefetch_related('variants', 'images').order_by('-created_at').distinct()
     serializer_class = ProductSerializer
     filter_backends = [django_filters.DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
@@ -46,13 +48,18 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     filter_backends = [django_filters.DjangoFilterBackend]
     filterset_fields = ['product']
+    
+    # SEGURIDAD: Límite para evitar spam de comentarios (5/hora)
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'store_reviews'
 
 
 class WishlistView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        wishlist = WishlistItem.objects.filter(user=request.user)
+        # OPTIMIZACIÓN: select_related carga los productos asociados en la misma consulta
+        wishlist = WishlistItem.objects.filter(user=request.user).select_related('product')
         serializer = WishlistItemSerializer(wishlist, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -91,6 +98,16 @@ def get_store_config(request):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all().order_by('-created_at')
     serializer_class = OrderSerializer
+    
+    # SEGURIDAD: Aplicamos Rate Limit
+    throttle_classes = [ScopedRateThrottle]
+
+    def get_throttles(self):
+        # Solo limitamos fuertemente la creación de órdenes (3/minuto)
+        # Los admin viendo el listado no tienen ese límite
+        if self.action == 'create':
+            self.throttle_scope = 'store_orders'
+        return super().get_throttles()
 
     def get_permissions(self):
         if self.action == 'create':
@@ -114,3 +131,29 @@ class OrderViewSet(viewsets.ModelViewSet):
             'message': '¡Pedido creado exitosamente!',
             'order': response_serializer.data
         }, status=status.HTTP_201_CREATED)
+
+
+class TrackOrderView(APIView):
+    permission_classes = [AllowAny]
+    
+    # SEGURIDAD: Límite para evitar fuerza bruta de IDs (10/minuto)
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'store_tracking'
+
+    def get(self, request, order_id):
+        try:
+            # Buscamos la orden. Manejamos el UUID.
+            order = Order.objects.get(id=order_id)
+            serializer = OrderTrackingSerializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "No encontramos una orden con esa referencia."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            # Captura errores si el formato del UUID es inválido
+            return Response(
+                {"error": "Formato de referencia inválido."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )

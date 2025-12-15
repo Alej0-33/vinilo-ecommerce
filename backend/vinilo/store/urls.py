@@ -6,7 +6,8 @@ from .views import (
     ReviewViewSet, 
     WishlistView, 
     ToggleWishlistView,
-    get_store_config
+    get_store_config,
+    TrackOrderView
 )
 
 router = DefaultRouter()
@@ -23,4 +24,5 @@ urlpatterns = [
     # Wishlist
     path('wishlist/', WishlistView.as_view(), name='wishlist-list'),
     path('wishlist/toggle/<uuid:product_id>/', ToggleWishlistView.as_view(), name='wishlist-toggle'),
+    path('track/<str:order_id>/', TrackOrderView.as_view(), name='track-order'),
 ]

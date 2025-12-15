@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils.html import strip_tags 
 from .models import Product, Variant, Order, OrderItem, ProductImage, Review, WishlistItem, StoreConfig
 
 # --- SERIALIZERS DE PRODUCTO ---
@@ -78,30 +79,47 @@ class OrderItemCreateSerializer(serializers.Serializer):
     product_id = serializers.CharField()
     product_name = serializers.CharField()
     size = serializers.CharField()
-    quantity = serializers.IntegerField(min_value=1)
+    # Seguridad: Limitar cantidad máxima lógica para evitar números absurdos
+    quantity = serializers.IntegerField(min_value=1, max_value=50) 
     price = serializers.DecimalField(max_digits=10, decimal_places=0)
 
 
 class OrderCreateSerializer(serializers.Serializer):
     """Serializer para crear una orden desde el frontend"""
-    # Datos del cliente
-    customer_name = serializers.CharField(max_length=200)
+    # Validaciones de longitud
+    customer_name = serializers.CharField(max_length=150)
     customer_id_number = serializers.CharField(max_length=20)
     customer_email = serializers.EmailField()
     customer_phone = serializers.CharField(max_length=20)
     
     # Datos de envío
-    shipping_address = serializers.CharField()
+    shipping_address = serializers.CharField(max_length=255)
     city = serializers.CharField(max_length=100)
     shipping_department = serializers.CharField(max_length=100)
     zip_code = serializers.CharField(max_length=20, required=False, allow_blank=True)
-    notes = serializers.CharField(required=False, allow_blank=True)
+    notes = serializers.CharField(required=False, allow_blank=True, max_length=500)
     
     # Pago
     payment_method = serializers.ChoiceField(choices=['COD', 'WOMPI'])
     
     # Items
     items = OrderItemCreateSerializer(many=True)
+
+    # --- SANITIZACIÓN ANTI-XSS ---
+    def validate_notes(self, value):
+        # Elimina cualquier etiqueta HTML (<script>, <img>, etc)
+        return strip_tags(value).strip()
+
+    def validate_customer_name(self, value):
+        return strip_tags(value).strip()
+    
+    def validate_shipping_address(self, value):
+        return strip_tags(value).strip()
+
+    def validate_items(self, value):
+        if len(value) == 0:
+            raise serializers.ValidationError("El pedido debe tener al menos un producto.")
+        return value
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -138,23 +156,29 @@ class OrderCreateSerializer(serializers.Serializer):
             status='PENDING'
         )
         
-        # Crear los items de la orden
+        # OPTIMIZACIÓN SQL: Bulk Create
+        # En lugar de guardar uno por uno en la base de datos (N queries),
+        # creamos una lista y guardamos todos de una sola vez (1 query).
+        order_items = []
+        
         for item_data in items_data:
             # Intentar obtener el producto original
-            product = None
+            product_instance = None
             try:
-                product = Product.objects.get(id=item_data['product_id'])
+                product_instance = Product.objects.get(id=item_data['product_id'])
             except Product.DoesNotExist:
-                pass
+                pass # Si el producto fue borrado, igual guardamos el registro histórico de nombre/precio
             
-            OrderItem.objects.create(
+            order_items.append(OrderItem(
                 order=order,
-                product=product,
+                product=product_instance,
                 product_name=item_data['product_name'],
                 size=item_data['size'],
                 quantity=item_data['quantity'],
                 price=item_data['price']
-            )
+            ))
+            
+        OrderItem.objects.bulk_create(order_items)
         
         return order
 
@@ -173,7 +197,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# --- SERIALIZERS DE REVIEWS ---
+# --- SERIALIZERS DE REVIEWS (MEJORADO) ---
 
 class ReviewSerializer(serializers.ModelSerializer):
     date_formatted = serializers.SerializerMethodField()
@@ -181,10 +205,43 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'product', 'author_name', 'rating', 'comment', 'date_formatted']
-        read_only_fields = ['id', 'date_formatted']
+        # Seguridad: is_visible debe ser read_only para que no puedan auto-aprobarse
+        read_only_fields = ['id', 'date_formatted', 'is_visible'] 
 
     def get_date_formatted(self, obj):
         return obj.created_at.strftime("%d/%m/%Y")
 
     def validate_comment(self, value):
-        return value.strip()
+        # Anti-XSS: Eliminar tags HTML
+        clean_comment = strip_tags(value).strip()
+        if not clean_comment:
+            raise serializers.ValidationError("El comentario no puede estar vacío.")
+        return clean_comment
+    
+    def validate_author_name(self, value):
+        # Anti-XSS en el nombre
+        return strip_tags(value).strip()
+
+# --- TRACKING SERIALIZER ---
+
+class OrderTrackingSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    created_at_formatted = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Order
+        # Solo exponemos datos no sensibles útiles para el rastreo
+        fields = [
+            'id', 
+            'status', 
+            'status_display', 
+            'created_at', 
+            'created_at_formatted',
+            'city', 
+            'shipping_company', 
+            'tracking_number'
+        ]
+
+    def get_created_at_formatted(self, obj):
+        # Formato legible: "15 Dic, 2025"
+        return obj.created_at.strftime("%d %b, %Y")

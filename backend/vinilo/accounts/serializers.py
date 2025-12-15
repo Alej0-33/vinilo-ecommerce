@@ -1,3 +1,5 @@
+# backend/accounts/serializers.py
+
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
@@ -9,32 +11,46 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
 
 class RegisterSerializer(serializers.ModelSerializer):
-    """Maneja el registro con validaciones estrictas"""
-    # Agregamos campos que no están por defecto obligatorios en User pero tú los pides
+    """Maneja el registro con validaciones estrictas y sanitización"""
+    
+    # Campos obligatorios explícitos
     email = serializers.EmailField(required=True)
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     
-    # Escribir contraseña dos veces (opcional, pero buena práctica UI)
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    # Password write_only para que no se devuelva en la respuesta por seguridad
+    password = serializers.CharField(
+        write_only=True, 
+        required=True, 
+        validators=[validate_password] # Aplica las reglas de seguridad de settings.py (largo, caracteres, etc)
+    )
 
     class Meta:
         model = User
         fields = ['username', 'email', 'password', 'first_name', 'last_name']
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
+        """
+        Normaliza el email a minúsculas para evitar duplicados por casing 
+        (ej: 'User@mail.com' vs 'user@mail.com')
+        """
+        normalized_email = value.lower().strip()
+        if User.objects.filter(email=normalized_email).exists():
             raise serializers.ValidationError("Este correo electrónico ya está registrado.")
-        return value
+        return normalized_email
 
     def create(self, validated_data):
         # Crear usuario estándar de Django
+        # validated_data['email'] ya viene normalizado desde validate_email
         user = User.objects.create(
-            username=validated_data['email'], # Usamos email como username para simplificar login
+            username=validated_data['email'], # Usamos el email limpio como username
             email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
+            first_name=validated_data['first_name'].strip(), # Quitamos espacios extra
+            last_name=validated_data['last_name'].strip()
         )
-        user.set_password(validated_data['password']) # Hashing automático seguro (PBKDF2)
+        
+        # Hashing automático seguro (PBKDF2 por defecto en Django)
+        user.set_password(validated_data['password']) 
         user.save()
+        
         return user
