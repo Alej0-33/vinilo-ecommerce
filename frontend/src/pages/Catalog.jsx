@@ -3,13 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ui/ProductCard';
 import { SlidersHorizontal, ChevronDown, X, Check, Loader2 } from 'lucide-react';
 
-// --- CONSTANTES UI ---
-const CATEGORIES = ["Nike", "Adidas", "Reebok", "Puma"]; // Esto en el backend se mapea a 'brand'
-const GENDERS = ["Hombre", "Mujer"];
-const SIZES = ["35", "36", "37", "38", "39", "40", "41", "42"];
-
 // --- DRAWER DE FILTROS ---
-const FilterSidebar = ({ isOpen, onClose, filters, setFilters, clearFilters, hasUrlGender }) => {
+const FilterSidebar = ({ isOpen, onClose, filters, setFilters, clearFilters, hasUrlGender, catalogConfig }) => {
   
   const toggleFilter = (type, value) => {
     setFilters(prev => {
@@ -39,17 +34,17 @@ const FilterSidebar = ({ isOpen, onClose, filters, setFilters, clearFilters, has
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           
           {/* 1. Género */}
-          {!hasUrlGender && (
+          {!hasUrlGender && catalogConfig.available_genders && (
             <div>
                 <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-vinilo-black">Género</h3>
                 <div className="space-y-3">
-                {GENDERS.map(gen => (
-                    <label key={gen} className="flex items-center gap-3 cursor-pointer group">
-                    <div className={`w-4 h-4 border flex items-center justify-center transition-colors ${filters.gender.includes(gen) ? 'bg-vinilo-red border-vinilo-red' : 'border-gray-300 group-hover:border-vinilo-black'}`}>
-                        {filters.gender.includes(gen) && <Check size={10} className="text-white" />}
+                {catalogConfig.available_genders.map(gen => (
+                    <label key={gen.value} className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`w-4 h-4 border flex items-center justify-center transition-colors ${filters.gender.includes(gen.label) ? 'bg-vinilo-red border-vinilo-red' : 'border-gray-300 group-hover:border-vinilo-black'}`}>
+                        {filters.gender.includes(gen.label) && <Check size={10} className="text-white" />}
                     </div>
-                    <input type="checkbox" className="hidden" checked={filters.gender.includes(gen)} onChange={() => toggleFilter('gender', gen)} />
-                    <span className="text-sm font-sans text-gray-600 group-hover:text-vinilo-black transition-colors">{gen}</span>
+                    <input type="checkbox" className="hidden" checked={filters.gender.includes(gen.label)} onChange={() => toggleFilter('gender', gen.label)} />
+                    <span className="text-sm font-sans text-gray-600 group-hover:text-vinilo-black transition-colors">{gen.label}</span>
                     </label>
                 ))}
                 </div>
@@ -58,42 +53,46 @@ const FilterSidebar = ({ isOpen, onClose, filters, setFilters, clearFilters, has
           )}
 
           {/* 2. Categoría (MARCA) */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-vinilo-black">Marca</h3>
-            <div className="space-y-3">
-              {CATEGORIES.map(cat => (
-                <label key={cat} className="flex items-center gap-3 cursor-pointer group">
-                  <div className={`w-4 h-4 border flex items-center justify-center transition-colors ${filters.category.includes(cat) ? 'bg-vinilo-red border-vinilo-red' : 'border-gray-300 group-hover:border-vinilo-black'}`}>
-                    {filters.category.includes(cat) && <Check size={10} className="text-white" />}
-                  </div>
-                  <input type="checkbox" className="hidden" checked={filters.category.includes(cat)} onChange={() => toggleFilter('category', cat)} />
-                  <span className="text-sm font-sans text-gray-600 group-hover:text-vinilo-black transition-colors">{cat}</span>
-                </label>
-              ))}
+          {catalogConfig.available_brands && (
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-vinilo-black">Marca</h3>
+              <div className="space-y-3">
+                {catalogConfig.available_brands.map(cat => (
+                  <label key={cat} className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`w-4 h-4 border flex items-center justify-center transition-colors ${filters.category.includes(cat) ? 'bg-vinilo-red border-vinilo-red' : 'border-gray-300 group-hover:border-vinilo-black'}`}>
+                      {filters.category.includes(cat) && <Check size={10} className="text-white" />}
+                    </div>
+                    <input type="checkbox" className="hidden" checked={filters.category.includes(cat)} onChange={() => toggleFilter('category', cat)} />
+                    <span className="text-sm font-sans text-gray-600 group-hover:text-vinilo-black transition-colors">{cat}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <hr className="border-gray-100" />
 
           {/* 3. Tallas */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-vinilo-black">Talla</h3>
-            <div className="grid grid-cols-4 gap-2">
-              {SIZES.map(size => (
-                <button
-                  key={size}
-                  onClick={() => toggleFilter('sizes', size)}
-                  className={`py-2 text-xs font-sans transition-all border ${
-                    filters.sizes.includes(size) 
-                      ? 'bg-vinilo-black text-white border-vinilo-black' 
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-vinilo-black'
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
+          {catalogConfig.available_sizes && (
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-vinilo-black">Talla</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {catalogConfig.available_sizes.map(size => (
+                  <button
+                    key={size}
+                    onClick={() => toggleFilter('sizes', size)}
+                    className={`py-2 text-xs font-sans transition-all border ${
+                      filters.sizes.includes(size) 
+                        ? 'bg-vinilo-black text-white border-vinilo-black' 
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-vinilo-black'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer Drawer */}
@@ -118,6 +117,11 @@ const Catalog = () => {
 
   // --- ESTADOS BACKEND ---
   const [products, setProducts] = useState([]);
+  const [catalogConfig, setCatalogConfig] = useState({
+    available_brands: [],
+    available_sizes: [],
+    available_genders: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -128,35 +132,53 @@ const Catalog = () => {
   // Estados de filtros locales
   const [localFilters, setLocalFilters] = useState({
     gender: [],
-    category: [], // Se usará como BRAND
+    category: [],
     sizes: []
   });
+
+  // 0. FETCH CONFIGURACIÓN DEL CATÁLOGO
+  useEffect(() => {
+    const fetchCatalogConfig = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/store/catalog-config/');
+        if (response.ok) {
+          const data = await response.json();
+          setCatalogConfig(data);
+        }
+      } catch (err) {
+        console.error("Error fetching catalog config:", err);
+      }
+    };
+    fetchCatalogConfig();
+  }, []);
 
   // 1. FETCH API CON FILTROS (SERVER SIDE FILTERING)
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        // Construir URL base
         const baseUrl = new URL('http://127.0.0.1:8000/api/store/products/');
         
         // A. Agregar Filtro de Género
         if (genderUrlParam) {
-            // Prioridad a la URL
-            const g = genderUrlParam.toLowerCase() === 'hombre' ? 'M' : 'F';
-            baseUrl.searchParams.append('gender', g);
+            const genderObj = catalogConfig.available_genders.find(
+                g => g.label.toLowerCase() === genderUrlParam.toLowerCase()
+            );
+            if (genderObj) {
+                baseUrl.searchParams.append('gender', genderObj.value);
+            }
         } else if (localFilters.gender.length > 0) {
-            // Filtro local del sidebar
             localFilters.gender.forEach(g => {
-                const val = g === 'Hombre' ? 'M' : 'F';
-                baseUrl.searchParams.append('gender', val);
+                const genderObj = catalogConfig.available_genders.find(gen => gen.label === g);
+                if (genderObj) {
+                    baseUrl.searchParams.append('gender', genderObj.value);
+                }
             });
         }
 
-        // B. Agregar Filtro de Marca (Usamos 'category' del state para filtrar 'brand' en backend)
+        // B. Agregar Filtro de Marca
         if (localFilters.category.length > 0) {
             localFilters.category.forEach(brand => {
-                // Django Filter es case-insensitive gracias a 'iexact' configurado
                 baseUrl.searchParams.append('brand', brand);
             });
         }
@@ -164,12 +186,10 @@ const Catalog = () => {
         // C. Agregar Filtro de Talla
         if (localFilters.sizes.length > 0) {
             localFilters.sizes.forEach(size => {
-                // Django Filter buscará en variantes gracias a la configuración
                 baseUrl.searchParams.append('size', size);
             });
         }
 
-        // Realizar la petición
         const response = await fetch(baseUrl.toString());
         if (!response.ok) throw new Error('Error de conexión con el servidor');
         
@@ -185,11 +205,13 @@ const Catalog = () => {
       }
     };
 
-    fetchProducts();
-  }, [genderUrlParam, localFilters]); // Se ejecuta cada vez que cambian los filtros
+    // Solo ejecutar si ya tenemos la configuración
+    if (catalogConfig.available_genders.length > 0) {
+        fetchProducts();
+    }
+  }, [genderUrlParam, localFilters, catalogConfig]);
 
   // 2. LOGICA DE ORDENAMIENTO (Client Side Sorting)
-  // Nota: Ya no filtramos aquí porque el Backend entregó los datos filtrados. Solo ordenamos.
   const processedProducts = useMemo(() => {
     let result = [...products];
 
@@ -201,7 +223,6 @@ const Catalog = () => {
 
     return result;
   }, [products, activeSort]);
-
 
   // Helpers de filtros
   const clearAllFilters = () => {
@@ -255,6 +276,7 @@ const Catalog = () => {
             setFilters={setLocalFilters}
             clearFilters={clearAllFilters}
             hasUrlGender={!!genderUrlParam}
+            catalogConfig={catalogConfig}
         />
       )}
 

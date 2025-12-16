@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.throttling import ScopedRateThrottle
 from django_filters import rest_framework as django_filters
-from .models import Product, Order, Review, WishlistItem, StoreConfig
+from .models import Product, Order, Review, WishlistItem, StoreConfig, CatalogConfig
 from .serializers import (
     ProductSerializer, 
     OrderSerializer, 
@@ -14,7 +14,8 @@ from .serializers import (
     ReviewSerializer, 
     WishlistItemSerializer,
     StoreConfigSerializer,
-    OrderTrackingSerializer
+    OrderTrackingSerializer,
+    CatalogConfigSerializer
 )
 
 # --- FILTRO PERSONALIZADO ---
@@ -48,11 +49,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     filter_backends = [django_filters.DjangoFilterBackend]
     filterset_fields = ['product']
-    
-    # SEGURIDAD: Límite para evitar spam de comentarios (5/hora)
-    throttle_classes = [ScopedRateThrottle]
-    throttle_scope = 'store_reviews'
-
+    def get_throttles(self):
+        """
+        Personalizamos los throttles para aplicar el límite estricto (5/hora)
+        SOLO cuando se intenta crear una reseña (POST).
+        """
+        if self.action == 'create':
+            self.throttle_scope = 'store_reviews'
+            return [ScopedRateThrottle()]
+        
+        return []
 
 class WishlistView(APIView):
     permission_classes = [IsAuthenticated]
@@ -90,6 +96,14 @@ def get_store_config(request):
     """Endpoint público para obtener la configuración de envío"""
     config = StoreConfig.get_config()
     serializer = StoreConfigSerializer(config)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_catalog_config(request):
+    """Endpoint público para obtener la configuración de filtros del catálogo"""
+    config = CatalogConfig.get_config()
+    serializer = CatalogConfigSerializer(config)
     return Response(serializer.data)
 
 

@@ -1,6 +1,7 @@
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, Variant, Order, OrderItem, ProductImage, Review, StoreConfig
+from .models import Product, Variant, Order, OrderItem, ProductImage, Review, StoreConfig, CatalogConfig
 
 # --- HELPER PARA MONEDA COP ---
 def format_cop(value):
@@ -38,7 +39,6 @@ class StoreConfigAdmin(admin.ModelAdmin):
     free_shipping_display.short_description = "Envío Gratis"
 
     def has_add_permission(self, request):
-        # Solo permitir una instancia
         return not StoreConfig.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
@@ -217,3 +217,218 @@ class ReviewAdmin(admin.ModelAdmin):
     def rating_stars(self, obj):
         return "★" * obj.rating
     rating_stars.short_description = "Estrellas"
+
+
+# --- FORMULARIO PERSONALIZADO PARA CATÁLOGO ---
+class CatalogConfigForm(forms.ModelForm):
+    # Campos virtuales para facilitar la edición
+    brands_input = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 6,
+            'placeholder': 'Ingresa una marca por línea:\nNike\nAdidas\nPuma\nReebok',
+            'style': 'width: 100%; font-family: monospace; font-size: 13px;'
+        }),
+        label='Lista de Marcas',
+        help_text='✏️ Escribe cada marca en una línea nueva'
+    )
+    
+    sizes_input = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 6,
+            'placeholder': 'Ingresa una talla por línea:\n35\n36\n37\n38\n39\n40',
+            'style': 'width: 100%; font-family: monospace; font-size: 13px;'
+        }),
+        label='Lista de Tallas',
+        help_text='✏️ Escribe cada talla en una línea nueva'
+    )
+    
+    # Campos para géneros
+    gender_hombre = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='👔 Hombre (M)',
+        help_text='Mostrar filtro de "Hombre" en el catálogo'
+    )
+    
+    gender_mujer = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='👗 Mujer (F)',
+        help_text='Mostrar filtro de "Mujer" en el catálogo'
+    )
+    
+    gender_unisex = forms.BooleanField(
+        required=False,
+        initial=False,
+        label='👕 Unisex (U)',
+        help_text='Mostrar filtro de "Unisex" en el catálogo'
+    )
+
+    class Meta:
+        model = CatalogConfig
+        fields = ['available_brands', 'available_sizes', 'available_genders']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Si hay una instancia, cargar los valores actuales
+        if self.instance and self.instance.pk:
+            # Cargar marcas
+            if self.instance.available_brands:
+                self.fields['brands_input'].initial = '\n'.join(self.instance.available_brands)
+            
+            # Cargar tallas
+            if self.instance.available_sizes:
+                self.fields['sizes_input'].initial = '\n'.join(self.instance.available_sizes)
+            
+            # Cargar géneros
+            if self.instance.available_genders:
+                for gender in self.instance.available_genders:
+                    if gender['value'] == 'M':
+                        self.fields['gender_hombre'].initial = True
+                    elif gender['value'] == 'F':
+                        self.fields['gender_mujer'].initial = True
+                    elif gender['value'] == 'U':
+                        self.fields['gender_unisex'].initial = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Procesar marcas
+        brands_text = cleaned_data.get('brands_input', '')
+        if brands_text:
+            brands_list = [brand.strip() for brand in brands_text.split('\n') if brand.strip()]
+            cleaned_data['available_brands'] = brands_list
+        else:
+            cleaned_data['available_brands'] = []
+        
+        # Procesar tallas
+        sizes_text = cleaned_data.get('sizes_input', '')
+        if sizes_text:
+            sizes_list = [size.strip() for size in sizes_text.split('\n') if size.strip()]
+            cleaned_data['available_sizes'] = sizes_list
+        else:
+            cleaned_data['available_sizes'] = []
+        
+        # Procesar géneros
+        genders_list = []
+        if cleaned_data.get('gender_hombre'):
+            genders_list.append({"value": "M", "label": "Hombre"})
+        if cleaned_data.get('gender_mujer'):
+            genders_list.append({"value": "F", "label": "Mujer"})
+        if cleaned_data.get('gender_unisex'):
+            genders_list.append({"value": "U", "label": "Unisex"})
+        
+        cleaned_data['available_genders'] = genders_list
+        
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Asignar valores procesados desde clean()
+        instance.available_brands = self.cleaned_data.get('available_brands', [])
+        instance.available_sizes = self.cleaned_data.get('available_sizes', [])
+        instance.available_genders = self.cleaned_data.get('available_genders', [])
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+
+# --- CONFIGURACIÓN DE CATÁLOGO CON TEMA VINILO OSCURO ---
+@admin.register(CatalogConfig)
+class CatalogConfigAdmin(admin.ModelAdmin):
+    form = CatalogConfigForm
+    list_display = ('__str__', 'brands_preview', 'sizes_preview', 'genders_preview')
+    
+    fieldsets = (
+    ('📦 Marcas Disponibles en Filtros', {
+        'fields': ('brands_input',),
+        'description': format_html(
+            '<div style="background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%); padding: 20px; border-radius: 4px; border-left: 4px solid #8B1A1A; margin-bottom: 20px;">'
+            '<strong style="font-size: 16px; color: #ffffff; font-family: serif; font-style: italic;">💡 Cómo agregar marcas</strong><br><br>'
+            '<span style="color: #f4f4f4; line-height: 1.6;">1️⃣ Escribe cada marca en una línea nueva</span><br>'
+            '<span style="color: #f4f4f4; line-height: 1.6;">2️⃣ No uses comas ni otros caracteres especiales</span><br>'
+            '<span style="color: #f4f4f4; line-height: 1.6;">3️⃣ Ejemplo:</span><br>'
+            '<div style="background: #000; padding: 12px; margin-top: 10px; border-radius: 4px; font-family: monospace; color: #ffffff; border: 1px solid #444; line-height: 1.8;">'
+            'Nike<br>Adidas<br>Puma<br>Reebok<br>New Balance'
+            '</div></div>'
+        )
+    }),
+    ('📏 Tallas Disponibles en Filtros', {
+        'fields': ('sizes_input',),
+        'description': format_html(
+            '<div style="background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%); padding: 20px; border-radius: 4px; border-left: 4px solid #8B1A1A; margin-bottom: 20px;">'
+            '<strong style="font-size: 16px; color: #ffffff; font-family: serif; font-style: italic;">💡 Cómo agregar tallas</strong><br><br>'
+            '<span style="color: #f4f4f4; line-height: 1.6;">1️⃣ Escribe cada talla en una línea nueva</span><br>'
+            '<span style="color: #f4f4f4; line-height: 1.6;">2️⃣ Puedes usar números o letras (S, M, L, XL)</span><br>'
+            '<span style="color: #f4f4f4; line-height: 1.6;">3️⃣ Ejemplo:</span><br>'
+            '<div style="background: #000; padding: 12px; margin-top: 10px; border-radius: 4px; font-family: monospace; color: #ffffff; border: 1px solid #444; line-height: 1.8;">'
+            '35<br>36<br>37<br>38<br>39<br>40<br>41<br>42'
+            '</div></div>'
+        )
+    }),
+    ('👤 Géneros Disponibles en Filtros', {
+        'fields': ('gender_hombre', 'gender_mujer', 'gender_unisex'),
+        'description': format_html(
+            '<div style="background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%); padding: 20px; border-radius: 4px; border-left: 4px solid #8B1A1A; margin-bottom: 20px;">'
+            '<strong style="font-size: 16px; color: #ffffff; font-family: serif; font-style: italic;">💡 Selecciona los géneros</strong><br><br>'
+            '<span style="color: #f4f4f4; line-height: 1.6;">✅ Marca las casillas de los géneros que quieres mostrar en el catálogo</span><br>'
+            '<span style="color: #f4f4f4; line-height: 1.6;">⚠️ Debes seleccionar al menos un género</span>'
+            '</div>'
+        )
+    }),
+    )
+
+    def brands_preview(self, obj):
+        if obj.available_brands:
+            count = len(obj.available_brands)
+            preview = ', '.join(obj.available_brands[:3])
+            if count > 3:
+                preview += f'... (+{count-3} más)'
+            return format_html(
+                '<span style="background: #8B1A1A; color: white; padding: 4px 10px; border-radius: 2px; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">{}</span>',
+                preview
+            )
+        return format_html('<span style="color: #666;">❌ Sin marcas</span>')
+    brands_preview.short_description = "Vista Previa Marcas"
+
+    def sizes_preview(self, obj):
+        if obj.available_sizes:
+            count = len(obj.available_sizes)
+            preview = ', '.join(obj.available_sizes[:6])
+            if count > 6:
+                preview += f'... (+{count-6} más)'
+            return format_html(
+                '<span style="background: #8B1A1A; color: white; padding: 4px 10px; border-radius: 2px; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">{}</span>',
+                preview
+            )
+        return format_html('<span style="color: #666;">❌ Sin tallas</span>')
+    sizes_preview.short_description = "Vista Previa Tallas"
+
+    def genders_preview(self, obj):
+        if obj.available_genders:
+            labels = [g['label'] for g in obj.available_genders]
+            icons = {'Hombre': '👔', 'Mujer': '👗', 'Unisex': '👕'}
+            formatted = ' '.join([f"{icons.get(label, '🔸')} {label}" for label in labels])
+            return format_html(
+                '<span style="background: #8B1A1A; color: white; padding: 4px 10px; border-radius: 2px; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">{}</span>',
+                formatted
+            )
+        return format_html('<span style="color: #666;">❌ Sin géneros</span>')
+    genders_preview.short_description = "Géneros Activos"
+
+    def has_add_permission(self, request):
+        return not CatalogConfig.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+    
+    class Media:
+        css = {
+            'all': ('admin/css/catalog_config.css',)
+        }

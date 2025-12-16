@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils.html import strip_tags 
-from .models import Product, Variant, Order, OrderItem, ProductImage, Review, WishlistItem, StoreConfig
+from .models import Product, Variant, Order, OrderItem, ProductImage, Review, WishlistItem, StoreConfig, CatalogConfig
 
 # --- SERIALIZERS DE PRODUCTO ---
 
@@ -71,6 +71,10 @@ class StoreConfigSerializer(serializers.ModelSerializer):
         model = StoreConfig
         fields = ['shipping_cost_cod', 'free_shipping_threshold', 'is_cod_enabled', 'is_wompi_enabled']
 
+class CatalogConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CatalogConfig
+        fields = ['available_brands', 'available_sizes', 'available_genders']
 
 # --- SERIALIZERS DE ORDEN ---
 

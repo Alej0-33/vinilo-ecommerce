@@ -7,6 +7,7 @@ from .views import (
     WishlistView, 
     ToggleWishlistView,
     get_store_config,
+    get_catalog_config,
     TrackOrderView
 )
 
@@ -20,6 +21,7 @@ urlpatterns = [
     
     # Configuración de tienda
     path('config/', get_store_config, name='store-config'),
+    path('catalog-config/', get_catalog_config, name='catalog-config'),
     
     # Wishlist
     path('wishlist/', WishlistView.as_view(), name='wishlist-list'),

@@ -277,3 +277,59 @@ class OrderEmailQueue(models.Model):
 
     def __str__(self):
         return f"Email {self.email_type} -> Order {str(self.order.id)[:8]} ({self.status})"
+
+# --- CONFIGURACIÓN DE CATÁLOGO (FILTROS DINÁMICOS) ---
+class CatalogConfig(models.Model):
+    """
+    Configuración de filtros disponibles en el catálogo.
+    """
+    # Marcas disponibles (JSON Array)
+    available_brands = models.JSONField(
+        default=list,
+        verbose_name="Marcas Disponibles",
+        help_text='Ejemplo: ["Nike", "Adidas", "Puma", "Reebok"]'
+    )
+    
+    # Tallas disponibles (JSON Array)
+    available_sizes = models.JSONField(
+        default=list,
+        verbose_name="Tallas Disponibles",
+        help_text='Ejemplo: ["35", "36", "37", "38", "39", "40", "41", "42"]'
+    )
+    
+    # Géneros disponibles (JSON Array con formato: {"value": "M", "label": "Hombre"})
+    available_genders = models.JSONField(
+        default=list,
+        verbose_name="Géneros Disponibles",
+        help_text='Ejemplo: [{"value": "M", "label": "Hombre"}, {"value": "F", "label": "Mujer"}]'
+    )
+    
+    class Meta:
+        verbose_name = "Configuración de Catálogo"
+        verbose_name_plural = "Configuración de Catálogo"
+
+    def __str__(self):
+        return "Filtros del Catálogo"
+
+    def save(self, *args, **kwargs):
+        # Singleton: Solo permitir una instancia
+        if not self.pk and CatalogConfig.objects.exists():
+            raise ValueError("Solo puede existir una configuración de catálogo.")
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_config(cls):
+        """Obtiene o crea la configuración singleton con valores por defecto"""
+        config, created = cls.objects.get_or_create(
+            pk=1,
+            defaults={
+                'available_brands': ["Nike", "Adidas", "Puma", "Reebok"],
+                'available_sizes': ["35", "36", "37", "38", "39", "40", "41", "42"],
+                'available_genders': [
+                    {"value": "M", "label": "Hombre"},
+                    {"value": "F", "label": "Mujer"},
+                    {"value": "U", "label": "Unisex"}
+                ]
+            }
+        )
+        return config
