@@ -86,7 +86,7 @@ class OrderItemCreateSerializer(serializers.Serializer):
 
 class OrderCreateSerializer(serializers.Serializer):
     """Serializer para crear una orden desde el frontend"""
-    # Validaciones de longitud
+    # Validaciones de longitud para evitar desbordamientos
     customer_name = serializers.CharField(max_length=150)
     customer_id_number = serializers.CharField(max_length=20)
     customer_email = serializers.EmailField()
@@ -106,8 +106,8 @@ class OrderCreateSerializer(serializers.Serializer):
     items = OrderItemCreateSerializer(many=True)
 
     # --- SANITIZACIÓN ANTI-XSS ---
+    # Limpiamos cualquier HTML malicioso de los campos de texto libre
     def validate_notes(self, value):
-        # Elimina cualquier etiqueta HTML (<script>, <img>, etc)
         return strip_tags(value).strip()
 
     def validate_customer_name(self, value):
@@ -124,7 +124,7 @@ class OrderCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         
-        # Obtener configuración de envío
+        # Obtener configuración de envío actual
         config = StoreConfig.get_config()
         
         # Calcular subtotal
@@ -138,7 +138,7 @@ class OrderCreateSerializer(serializers.Serializer):
         if config.free_shipping_threshold and subtotal >= config.free_shipping_threshold:
             shipping_cost = 0
         
-        # Crear la orden
+        # Crear la orden (Esto activará Order.save -> Crear Tarea Email Queue automáticamente)
         order = Order.objects.create(
             customer_name=validated_data['customer_name'],
             customer_id_number=validated_data['customer_id_number'],
@@ -157,17 +157,16 @@ class OrderCreateSerializer(serializers.Serializer):
         )
         
         # OPTIMIZACIÓN SQL: Bulk Create
-        # En lugar de guardar uno por uno en la base de datos (N queries),
-        # creamos una lista y guardamos todos de una sola vez (1 query).
+        # Insertamos todos los productos en una sola consulta para máximo rendimiento
         order_items = []
         
         for item_data in items_data:
-            # Intentar obtener el producto original
+            # Intentar obtener el producto original para vincularlo (si aún existe)
             product_instance = None
             try:
                 product_instance = Product.objects.get(id=item_data['product_id'])
             except Product.DoesNotExist:
-                pass # Si el producto fue borrado, igual guardamos el registro histórico de nombre/precio
+                pass 
             
             order_items.append(OrderItem(
                 order=order,
@@ -184,9 +183,25 @@ class OrderCreateSerializer(serializers.Serializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    product_image = serializers.SerializerMethodField()
+    
     class Meta:
         model = OrderItem
-        fields = ['product_name', 'size', 'quantity', 'price']
+        fields = ['product_name', 'size', 'quantity', 'price', 'product_image']
+    
+    def get_product_image(self, obj):
+        """
+        Obtiene la URL de la imagen del producto asociado.
+        Maneja casos donde el producto fue eliminado (null).
+        """
+        request = self.context.get('request')
+        
+        # Si el producto aún existe y tiene imagen
+        if obj.product and obj.product.image and request:
+            return request.build_absolute_uri(obj.product.image.url)
+        
+        # Retornar None si no hay producto o imagen
+        return None
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -205,14 +220,14 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'product', 'author_name', 'rating', 'comment', 'date_formatted']
-        # Seguridad: is_visible debe ser read_only para que no puedan auto-aprobarse
+        # Seguridad: 'is_visible' es solo lectura, el usuario no puede aprobar sus propias reseñas
         read_only_fields = ['id', 'date_formatted', 'is_visible'] 
 
     def get_date_formatted(self, obj):
         return obj.created_at.strftime("%d/%m/%Y")
 
     def validate_comment(self, value):
-        # Anti-XSS: Eliminar tags HTML
+        # Anti-XSS: Eliminar tags HTML y espacios vacíos
         clean_comment = strip_tags(value).strip()
         if not clean_comment:
             raise serializers.ValidationError("El comentario no puede estar vacío.")
@@ -222,6 +237,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         # Anti-XSS en el nombre
         return strip_tags(value).strip()
 
+
 # --- TRACKING SERIALIZER ---
 
 class OrderTrackingSerializer(serializers.ModelSerializer):
@@ -230,7 +246,7 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        # Solo exponemos datos no sensibles útiles para el rastreo
+        # Solo exponemos datos no sensibles útiles para el rastreo público
         fields = [
             'id', 
             'status', 

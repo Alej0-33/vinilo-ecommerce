@@ -76,7 +76,7 @@ const ReviewForm = ({ productId }) => {
             comment: formData.comment
         };
 
-        const response = await fetch('http://127.0.0.1:8000/api/reviews/', {
+        const response = await fetch('http://127.0.0.1:8000/api/store/reviews/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

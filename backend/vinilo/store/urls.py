@@ -12,7 +12,7 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet)
-router.register(r'orders', OrderViewSet)
+router.register(r'orders', OrderViewSet, basename='order')
 router.register(r'reviews', ReviewViewSet)
 
 urlpatterns = [

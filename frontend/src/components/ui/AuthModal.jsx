@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext'; 
 import { X, Mail, Lock, User, CheckCircle, ArrowLeft, Send, Eye, EyeOff, LogOut, UserCircle, Package, Settings, Save, AlertCircle, Heart, KeyRound } from 'lucide-react';
 import Button from './Button';
@@ -49,71 +50,82 @@ const InputField = ({ type = "text", placeholder, icon: Icon, value, onChange, r
 // 2. VISTAS INTERNAS
 // ----------------------------------------------------------------------
 
-const ProfileView = ({ user, onChangeView, onLogout }) => (
-  <div className="p-8">
-    <div className="text-center mb-8">
-      <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200">
-        <UserCircle size={48} className="text-gray-400" strokeWidth={1} />
+const ProfileView = ({ user, onChangeView, onLogout, onClose }) => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="p-8">
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200">
+          <UserCircle size={48} className="text-gray-400" strokeWidth={1} />
+        </div>
+        <h3 className="font-serif text-2xl text-vinilo-black italic mb-1">
+          Hola, {user?.first_name || user?.name || 'Usuario'}
+        </h3>
+        <p className="text-xs text-gray-400 font-sans tracking-wide">{user?.email}</p>
       </div>
-      <h3 className="font-serif text-2xl text-vinilo-black italic mb-1">
-        Hola, {user?.first_name || user?.name || 'Usuario'}
-      </h3>
-      <p className="text-xs text-gray-400 font-sans tracking-wide">{user?.email}</p>
-    </div>
 
-    <div className="space-y-3">
-      {/* Botón Mis Datos */}
-      <button 
-        onClick={() => onChangeView('edit-profile')}
-        className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
-      >
-        <div className="flex items-center gap-3">
-          <Settings size={18} className="text-vinilo-black" />
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black">Mis Datos</p>
-            <p className="text-[10px] text-gray-400">Actualizar nombre y correo</p>
+      <div className="space-y-3">
+        {/* Botón Mis Datos */}
+        <button 
+          onClick={() => onChangeView('edit-profile')}
+          className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
+        >
+          <div className="flex items-center gap-3">
+            <Settings size={18} className="text-vinilo-black" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black">Mis Datos</p>
+              <p className="text-[10px] text-gray-400">Actualizar nombre y correo</p>
+            </div>
           </div>
-        </div>
-        <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
-      </button>
+          <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
+        </button>
 
-      {/* Botón Mis Pedidos */}
-      <button className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left">
-        <div className="flex items-center gap-3">
-          <Package size={18} className="text-vinilo-black" />
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black">Mis Pedidos</p>
-            <p className="text-[10px] text-gray-400">Ver historial de compras</p>
+        {/* Botón Mis Pedidos */}
+        <button 
+          onClick={() => {
+            navigate('/account/orders');
+            onClose();
+          }}
+          className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
+        >
+          <div className="flex items-center gap-3">
+            <Package size={18} className="text-vinilo-black" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black">Mis Pedidos</p>
+              <p className="text-[10px] text-gray-400">Ver historial de compras</p>
+            </div>
           </div>
-        </div>
-        <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
-      </button>
+          <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
+        </button>
 
-      {/* Botón Wishlist */}
-      <button 
-        onClick={() => {
-            window.location.href = '/account/wishlist'; 
-        }}
-        className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
-      >
-        <div className="flex items-center gap-3">
-          <Heart size={18} className="text-vinilo-black group-hover:text-vinilo-red transition-colors" />
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black group-hover:text-vinilo-red transition-colors">Wishlist</p>
-            <p className="text-[10px] text-gray-400">Mis favoritos guardados</p>
+        {/* Botón Wishlist */}
+        <button 
+          onClick={() => {
+            navigate('/account/wishlist');
+            onClose();
+          }}
+          className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
+        >
+          <div className="flex items-center gap-3">
+            <Heart size={18} className="text-vinilo-black group-hover:text-vinilo-red transition-colors" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-vinilo-black group-hover:text-vinilo-red transition-colors">Wishlist</p>
+              <p className="text-[10px] text-gray-400">Mis favoritos guardados</p>
+            </div>
           </div>
-        </div>
-        <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
-      </button>
-    </div>
+          <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
+        </button>
+      </div>
 
-    <div className="mt-8 pt-6 border-t border-gray-100">
-      <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-vinilo-red hover:bg-red-50 transition-all border border-transparent hover:border-red-100">
-        <LogOut size={16} /> Cerrar Sesión
-      </button>
+      <div className="mt-8 pt-6 border-t border-gray-100">
+        <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-vinilo-red hover:bg-red-50 transition-all border border-transparent hover:border-red-100">
+          <LogOut size={16} /> Cerrar Sesión
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const EditProfileView = ({ formData, setFormData, onSubmit, loading, error, success, onBack }) => (
   <div className="p-8">
@@ -154,18 +166,16 @@ const AuthModal = ({ isOpen, onClose }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   
-  // Estado para verificación de Email (OTP)
   const [isVerifying, setIsVerifying] = useState(false);
   const [otpCode, setOtpCode] = useState('');
 
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
 
-  // Reset al abrir el modal
   useEffect(() => {
     if (isOpen) {
         setInternalLoading(false);
         setErrorMsg('');
-        setIsVerifying(false); // Reseteamos la vista de verificación
+        setIsVerifying(false);
         setOtpCode('');
         
         if (isAuthenticated) {
@@ -187,7 +197,6 @@ const AuthModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen, isAuthenticated, user]);
 
-  // Manejo de cambio de pestaña (cancela proceso si hay carga activa)
   const handleTabChange = (targetView) => {
     if (activeView === targetView) return;
 
@@ -212,7 +221,6 @@ const AuthModal = ({ isOpen, onClose }) => {
     
     if (activeView !== 'edit-profile') setSuccessMsg('');
 
-    // --- NUEVA VALIDACIÓN: Contraseñas coinciden ---
     if (activeView === 'register' && !isVerifying) {
       if (formData.password !== formData.confirmPassword) {
         setErrorMsg('Las contraseñas no coinciden.');
@@ -228,23 +236,19 @@ const AuthModal = ({ isOpen, onClose }) => {
             else if (result) setErrorMsg(result.message);
         } 
         else if (activeView === 'register') {
-            // Caso 1: Enviar Registro Inicial
             if (!isVerifying) {
                 const result = await register(formData);
                 if (result.success && result.needVerification) {
-                    // Si el backend pide verificación, cambiamos el estado
                     setIsVerifying(true);
                     setSuccessMsg(`Hemos enviado un código de verificación a ${formData.email}`);
                 } else if (!result.success) {
                     setErrorMsg(result.message);
                 }
             } 
-            // Caso 2: Verificar Código OTP
             else {
                 const result = await verifyEmail(formData.email, otpCode);
                 if (result.success) {
                     setSuccessMsg('Cuenta verificada exitosamente. Iniciando sesión...');
-                    // Login automático tras verificar
                     await login(formData.email, formData.password);
                     onClose();
                 } else {
@@ -283,16 +287,14 @@ const AuthModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  // Render Perfil
   if (isAuthenticated && activeView === 'profile') {
       return (
         <ModalWrapper onClose={onClose}>
-            <ProfileView user={user} onChangeView={setActiveView} onLogout={handleLogout} />
+            <ProfileView user={user} onChangeView={setActiveView} onLogout={handleLogout} onClose={onClose} />
         </ModalWrapper>
       );
   }
 
-  // Render Editar Perfil
   if (isAuthenticated && activeView === 'edit-profile') {
       return (
         <ModalWrapper onClose={onClose}>
@@ -309,11 +311,9 @@ const AuthModal = ({ isOpen, onClose }) => {
       );
   }
 
-  // Render Vistas Guest (Login / Registro / OTP / Recuperación)
   return (
     <ModalWrapper onClose={onClose}>
         
-        {/* Navegación Tabs (oculta si estamos verificando o recuperando) */}
         {activeView !== 'recovery' && !isVerifying && (
           <div className="flex border-b border-gray-100">
             <button 
@@ -334,7 +334,6 @@ const AuthModal = ({ isOpen, onClose }) => {
         )}
 
         <div className="p-8 md:p-10">
-            {/* Encabezado Dinámico */}
             <div className="text-center mb-6 relative">
                 {(activeView === 'recovery' || isVerifying) && (
                     <button 
@@ -369,7 +368,6 @@ const AuthModal = ({ isOpen, onClose }) => {
                 </p>
             </div>
 
-            {/* Alertas */}
             {errorMsg && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-500 text-xs text-center font-bold flex items-center justify-center gap-2 animate-fade-in">
                     <AlertCircle size={16} /> {errorMsg}
@@ -385,11 +383,9 @@ const AuthModal = ({ isOpen, onClose }) => {
                 </div>
             )}
 
-            {/* Formulario Guest */}
             {!(activeView === 'recovery' && successMsg && !errorMsg) && (
                 <form onSubmit={handleSubmit} className="space-y-4">
                     
-                    {/* VISTA: OTP VERIFICATION */}
                     {isVerifying ? (
                         <div className="animate-fade-in space-y-4">
                             <div className="p-3 bg-blue-50 text-blue-700 text-xs text-center rounded">
@@ -408,7 +404,6 @@ const AuthModal = ({ isOpen, onClose }) => {
                             />
                         </div>
                     ) : (
-                        /* VISTAS: LOGIN / REGISTER / RECOVERY */
                         <>
                             {activeView === 'register' && (
                                 <div className="grid grid-cols-2 gap-4 animate-fade-in">
@@ -447,14 +442,12 @@ const AuthModal = ({ isOpen, onClose }) => {
                         </>
                     )}
 
-                    {/* Link recuperación (solo login) */}
                     {!isVerifying && activeView === 'login' && (
                         <div className="flex justify-end text-xs pt-1">
                             <button type="button" onClick={() => setActiveView('recovery')} className="text-gray-400 hover:text-vinilo-red transition-colors underline decoration-1 underline-offset-2">¿Olvidaste tu contraseña?</button>
                         </div>
                     )}
 
-                    {/* Botón Acción Principal */}
                     <div className="pt-2">
                         <Button variant="primary" size="full" type="submit" disabled={internalLoading} className={`relative ${internalLoading ? 'opacity-90 cursor-not-allowed' : ''}`}>
                             {internalLoading ? (
@@ -469,7 +462,6 @@ const AuthModal = ({ isOpen, onClose }) => {
                 </form>
             )}
 
-            {/* Términos y Condiciones (Solo para Registro) */}
             {activeView === 'register' && !isVerifying && !successMsg && (
                 <div className="animate-fade-in mt-6">
                     <p className="text-center text-[10px] text-gray-400 px-4 leading-tight">
@@ -482,7 +474,6 @@ const AuthModal = ({ isOpen, onClose }) => {
   );
 };
 
-// Wrapper auxiliar
 const ModalWrapper = ({ children, onClose }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-vinilo-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />

@@ -96,15 +96,12 @@ def get_store_config(request):
 # --- ÓRDENES ---
 
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all().order_by('-created_at')
     serializer_class = OrderSerializer
     
     # SEGURIDAD: Aplicamos Rate Limit
     throttle_classes = [ScopedRateThrottle]
 
     def get_throttles(self):
-        # Solo limitamos fuertemente la creación de órdenes (3/minuto)
-        # Los admin viendo el listado no tienen ese límite
         if self.action == 'create':
             self.throttle_scope = 'store_orders'
         return super().get_throttles()
@@ -112,19 +109,32 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             return [AllowAny()]
-        return [IsAdminUser()]
+        # Permitir ver historial a usuarios logueados o admins
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()]
+        return [IsAdminUser()]  # Update/Delete solo admin
 
     def get_serializer_class(self):
         if self.action == 'create':
             return OrderCreateSerializer
         return OrderSerializer
 
+    # --- NUEVO: FILTRADO POR USUARIO ---
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Si es Admin, ve todo
+        if user.is_staff:
+            return Order.objects.all().order_by('-created_at')
+        
+        # Si es usuario normal, solo ve sus órdenes (coincidencia por email)
+        return Order.objects.filter(customer_email=user.email).order_by('-created_at')
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
         
-        # Retornar la orden creada con el serializer de lectura
         response_serializer = OrderSerializer(order)
         return Response({
             'success': True,

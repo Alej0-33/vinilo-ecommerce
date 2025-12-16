@@ -175,6 +175,51 @@ class Order(models.Model):
     def __str__(self):
         return f"Pedido #{str(self.id)[:8]} - {self.customer_name}"
 
+    def save(self, *args, **kwargs):
+        # 1. Capturar estado previo antes de guardar
+        is_new = self.pk is None
+        old_status = None
+        old_tracking = None
+        
+        if not is_new:
+            try:
+                old_order = Order.objects.get(pk=self.pk)
+                old_status = old_order.status
+                old_tracking = old_order.tracking_number
+            except Order.DoesNotExist:
+                pass
+
+        # 2. Guardar cambios en la base de datos
+        super().save(*args, **kwargs)
+
+        # 3. Lógica para Cola de Correos
+        try:
+            # Caso A: Pedido Nuevo -> Crear tarea de confirmación
+            if is_new:
+                OrderEmailQueue.objects.create(
+                    order=self,
+                    email_type='CONFIRMATION'
+                )
+            
+            # Caso B: Cambio de estado o número de guía -> Crear tarea de actualización
+            elif old_status and (self.status != old_status or (self.tracking_number and self.tracking_number != old_tracking)):
+                
+                # Verificar si ya existe una tarea pendiente igual para evitar duplicados (spam)
+                has_pending = OrderEmailQueue.objects.filter(
+                    order=self,
+                    email_type='UPDATE',
+                    status='PENDING'
+                ).exists()
+
+                if not has_pending:
+                    OrderEmailQueue.objects.create(
+                        order=self,
+                        email_type='UPDATE'
+                    )
+        except Exception as e:
+            # Si falla la creación de la cola, no detenemos el guardado del pedido, solo imprimimos error
+            print(f"Error al crear tarea de correo: {e}")
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
@@ -203,3 +248,32 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
+
+
+# --- NUEVO MODELO: COLA DE CORREOS (EMAIL WORKER QUEUE) ---
+class OrderEmailQueue(models.Model):
+    EMAIL_TYPES = [
+        ('CONFIRMATION', 'Confirmación de Compra'),
+        ('UPDATE', 'Actualización de Estado'),
+    ]
+    STATUS_CHOICES = [
+        ('PENDING', 'Pendiente'),
+        ('SENT', 'Enviado'),
+        ('FAILED', 'Fallido'),
+    ]
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='email_tasks')
+    email_type = models.CharField(max_length=20, choices=EMAIL_TYPES)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
+    attempts = models.PositiveIntegerField(default=0) # Contador de reintentos
+    error_message = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Cola de Correo"
+        verbose_name_plural = "Cola de Correos"
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Email {self.email_type} -> Order {str(self.order.id)[:8]} ({self.status})"

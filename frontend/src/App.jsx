@@ -15,6 +15,7 @@ import Wishlist from './pages/Wishlist';
 import TermsConditions from './pages/TermsConditions';
 import Tracking from './pages/TrackOrder';
 import ResetPassword from './pages/ResetPassword'; 
+import MyOrders from './pages/MyOrders';
 import Privacy from './pages/Privacy';
 import Contact from './pages/Contact';
 
@@ -31,7 +32,8 @@ function App() {
               <Route path="catalogo" element={<Catalog />} />
               <Route path="checkout" element={<Checkout />} />
               <Route path="/product/:id" element={<ProductPage />} /> 
-              <Route path="account/wishlist" element={<Wishlist />} />
+              <Route path="/account/wishlist" element={<Wishlist />} />
+              <Route path="/account/orders" element={<MyOrders />} />
               <Route path="tracking" element={<Tracking/>} />
               <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
               <Route path="terms-conditions" element={<TermsConditions />} />
