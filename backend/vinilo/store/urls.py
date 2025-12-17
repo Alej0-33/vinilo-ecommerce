@@ -8,7 +8,8 @@ from .views import (
     ToggleWishlistView,
     get_store_config,
     get_catalog_config,
-    TrackOrderView
+    TrackOrderView,
+    NewsletterSubscriptionView 
 )
 
 router = DefaultRouter()
@@ -27,4 +28,5 @@ urlpatterns = [
     path('wishlist/', WishlistView.as_view(), name='wishlist-list'),
     path('wishlist/toggle/<uuid:product_id>/', ToggleWishlistView.as_view(), name='wishlist-toggle'),
     path('track/<str:order_id>/', TrackOrderView.as_view(), name='track-order'),
+     path('newsletter/subscribe/', NewsletterSubscriptionView.as_view(), name='newsletter-subscribe'),
 ]

@@ -54,6 +54,7 @@ REST_FRAMEWORK = {
         'store_orders': '3/minute', 
         'store_reviews': '5/hour',   
         'store_tracking': '10/minute',
+        'newsletter_add': '3/minute',
     }
 }
 SIMPLE_JWT = {

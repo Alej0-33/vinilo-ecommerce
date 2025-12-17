@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.throttling import ScopedRateThrottle
 from django_filters import rest_framework as django_filters
-from .models import Product, Order, Review, WishlistItem, StoreConfig, CatalogConfig
+from .models import Product, Order, Review, WishlistItem, StoreConfig, CatalogConfig, NewsletterSubscriber
 from .serializers import (
     ProductSerializer, 
     OrderSerializer, 
@@ -15,7 +15,8 @@ from .serializers import (
     WishlistItemSerializer,
     StoreConfigSerializer,
     OrderTrackingSerializer,
-    CatalogConfigSerializer
+    CatalogConfigSerializer,
+    NewsletterSerializer
 )
 
 # --- FILTRO PERSONALIZADO ---
@@ -95,7 +96,7 @@ class ToggleWishlistView(APIView):
 def get_store_config(request):
     """Endpoint público para obtener la configuración de envío"""
     config = StoreConfig.get_config()
-    serializer = StoreConfigSerializer(config)
+    serializer = StoreConfigSerializer(config, context={'request':request})
     return Response(serializer.data)
 
 @api_view(['GET'])
@@ -181,3 +182,31 @@ class TrackOrderView(APIView):
                 {"error": "Formato de referencia inválido."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+class NewsletterSubscriptionView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'newsletter_add' # Define esto en settings.py si quieres limitar (ej: 5/min)
+
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+        
+        if not email:
+            return Response({'error': 'El correo es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Usamos get_or_create para manejar duplicados sin error
+        subscriber, created = NewsletterSubscriber.objects.get_or_create(
+            email=email,
+            defaults={'is_active': True}
+        )
+
+        if not created:
+            # Si ya existía pero estaba inactivo, lo reactivamos
+            if not subscriber.is_active:
+                subscriber.is_active = True
+                subscriber.save()
+                return Response({'message': '¡Te has reactivado al newsletter!'}, status=status.HTTP_200_OK)
+            
+            return Response({'message': 'Ya estás suscrito a nuestro newsletter.'}, status=status.HTTP_200_OK)
+
+        return Response({'message': '¡Suscripción exitosa!'}, status=status.HTTP_201_CREATED)

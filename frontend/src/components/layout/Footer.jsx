@@ -33,15 +33,11 @@ const Footer = () => {
             
             <div className="mt-8">
               <div className="flex gap-4">
-                <a href="#" className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:border-vinilo-red hover:bg-vinilo-red hover:text-white transition-all duration-300">
+                <a href="https://www.instagram.com/v1nilostore" className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:border-vinilo-red hover:bg-vinilo-red hover:text-white transition-all duration-300">
                   <Instagram size={18} />
                 </a>
                 <a href="#" className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:border-vinilo-red hover:bg-vinilo-red hover:text-white transition-all duration-300">
                   <Facebook size={18} />
-                </a>
-                {/* Icono de X (Twitter) */}
-                <a href="#" className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:border-vinilo-red hover:bg-vinilo-red hover:text-white transition-all duration-300">
-                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]"><path d="M4 4l11.733 16h4.267l-11.733 -16z" /><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" /></svg>
                 </a>
               </div>
             </div>

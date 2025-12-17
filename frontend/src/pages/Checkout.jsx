@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext'; // ✅ Importar AuthContext
+import { useAuth } from '../context/AuthContext';
 import { ChevronLeft, MapPin, CreditCard, Truck, Lock, ShieldCheck, CheckCircle, Package, Gift, User } from 'lucide-react';
 
 import ProgressBar from '../components/ui/ProgressBar';
@@ -28,7 +28,7 @@ const formatCOP = (value) => {
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, cartTotal, clearCart } = useCart();
-  const { user, isAuthenticated } = useAuth(); // ✅ Obtener datos del usuario
+  const { user, isAuthenticated } = useAuth();
   
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [loading, setLoading] = useState(false);
@@ -55,7 +55,7 @@ const Checkout = () => {
     notes: ''
   });
 
-  // ✅ Autocompletar datos si el usuario está logueado
+  // Autocompletar datos si el usuario está logueado
   useEffect(() => {
     if (isAuthenticated && user) {
       setFormData(prev => ({
@@ -63,11 +63,6 @@ const Checkout = () => {
         firstName: user.first_name || '',
         lastName: user.last_name || '',
         email: user.email || '',
-        // Si tienes estos campos en el modelo de usuario, también los puedes usar:
-        // phone: user.phone || '',
-        // address: user.address || '',
-        // city: user.city || '',
-        // department: user.department || '',
       }));
     }
   }, [isAuthenticated, user]);
@@ -276,7 +271,6 @@ const Checkout = () => {
           {/* COLUMNA IZQUIERDA: FORMULARIO */}
           <div className="flex-1 space-y-10 animate-fade-in-up">
             
-            {/* ✅ Banner de usuario logueado */}
             {isAuthenticated && user && (
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -303,11 +297,13 @@ const Checkout = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Nombre *</label>
+                  <label htmlFor="firstName" className="text-xs font-bold uppercase text-gray-500">Nombre *</label>
                   <input 
+                    id="firstName"
                     required 
                     type="text" 
                     name="firstName" 
+                    autoComplete="given-name" 
                     value={formData.firstName} 
                     onChange={handleInputChange} 
                     className={`w-full border p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors rounded-sm ${
@@ -317,11 +313,13 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Apellido *</label>
+                  <label htmlFor="lastName" className="text-xs font-bold uppercase text-gray-500">Apellido *</label>
                   <input 
+                    id="lastName"
                     required 
                     type="text" 
                     name="lastName" 
+                    autoComplete="family-name"
                     value={formData.lastName} 
                     onChange={handleInputChange} 
                     className={`w-full border p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors rounded-sm ${
@@ -331,11 +329,13 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Cédula / CC *</label>
+                  <label htmlFor="cedula" className="text-xs font-bold uppercase text-gray-500">Cédula / CC *</label>
                   <input 
+                    id="cedula"
                     required 
                     type="text" 
-                    name="cedula" 
+                    name="cedula"
+                    autoComplete="off" 
                     value={formData.cedula} 
                     onChange={handleInputChange} 
                     className="w-full border border-gray-200 p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors bg-vinilo-gray/20 rounded-sm" 
@@ -343,11 +343,13 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Teléfono *</label>
+                  <label htmlFor="phone" className="text-xs font-bold uppercase text-gray-500">Teléfono *</label>
                   <input 
+                    id="phone"
                     required 
                     type="tel" 
-                    name="phone" 
+                    name="phone"
+                    autoComplete="tel" 
                     value={formData.phone} 
                     onChange={handleInputChange} 
                     className="w-full border border-gray-200 p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors bg-vinilo-gray/20 rounded-sm" 
@@ -355,11 +357,13 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="md:col-span-2 space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Correo Electrónico *</label>
+                  <label htmlFor="email" className="text-xs font-bold uppercase text-gray-500">Correo Electrónico *</label>
                   <input 
+                    id="email"
                     required 
                     type="email" 
-                    name="email" 
+                    name="email"
+                    autoComplete="email" 
                     value={formData.email} 
                     onChange={handleInputChange} 
                     className={`w-full border p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors rounded-sm ${
@@ -369,11 +373,13 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="md:col-span-2 space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Dirección Completa *</label>
+                  <label htmlFor="address" className="text-xs font-bold uppercase text-gray-500">Dirección Completa *</label>
                   <input 
+                    id="address"
                     required 
                     type="text" 
-                    name="address" 
+                    name="address"
+                    autoComplete="street-address" 
                     value={formData.address} 
                     onChange={handleInputChange} 
                     className="w-full border border-gray-200 p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors bg-vinilo-gray/20 rounded-sm" 
@@ -381,11 +387,13 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Departamento *</label>
+                  <label htmlFor="department" className="text-xs font-bold uppercase text-gray-500">Departamento *</label>
                   <input 
+                    id="department"
                     required 
                     type="text" 
-                    name="department" 
+                    name="department"
+                    autoComplete="address-level1" 
                     value={formData.department} 
                     onChange={handleInputChange} 
                     className="w-full border border-gray-200 p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors bg-vinilo-gray/20 rounded-sm" 
@@ -393,11 +401,13 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Ciudad *</label>
+                  <label htmlFor="city" className="text-xs font-bold uppercase text-gray-500">Ciudad *</label>
                   <input 
+                    id="city"
                     required 
                     type="text" 
-                    name="city" 
+                    name="city"
+                    autoComplete="address-level2" 
                     value={formData.city} 
                     onChange={handleInputChange} 
                     className="w-full border border-gray-200 p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors bg-vinilo-gray/20 rounded-sm" 
@@ -405,18 +415,21 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Código Postal</label>
+                  <label htmlFor="zipCode" className="text-xs font-bold uppercase text-gray-500">Código Postal</label>
                   <input 
+                    id="zipCode"
                     type="text" 
-                    name="zipCode" 
+                    name="zipCode"
+                    autoComplete="postal-code" 
                     value={formData.zipCode} 
                     onChange={handleInputChange} 
                     className="w-full border border-gray-200 p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors bg-vinilo-gray/20 rounded-sm" 
                   />
                 </div>
                 <div className="md:col-span-2 space-y-1 mt-2">
-                  <label className="text-xs font-bold uppercase text-gray-500">Notas Adicionales (Opcional)</label>
+                  <label htmlFor="notes" className="text-xs font-bold uppercase text-gray-500">Notas Adicionales (Opcional)</label>
                   <textarea 
+                    id="notes"
                     name="notes" 
                     rows="2" 
                     value={formData.notes} 

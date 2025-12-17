@@ -1,57 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { Link } from 'react-router-dom';
 import Hero from '../components/sections/Hero';
 import ProductGrid from '../components/sections/ProductGrid';
 import Button from '../components/ui/Button';
-import { Truck, ShieldCheck, RefreshCw, ArrowRight, Star, Info } from 'lucide-react';
+import { Truck, ShieldCheck, ArrowRight, Star, Info, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 // --- IMPORTACIÓN DE ASSETS LOCALES ---
 import imgCategory1 from '../assets/IMG_4668.PNG';
 import imgCategory2 from '../assets/IMG_4669.PNG';
 import imgCategory3 from '../assets/IMG_4671.PNG';
-
-import imgProd1 from '../assets/IMG_4673.PNG'; // Amiri
-import imgProd2 from '../assets/IMG_4674.PNG'; // Valentino
-import imgProd3 from '../assets/IMG_4675.PNG'; // Nike
-import imgProd4 from '../assets/IMG_4676.PNG'; // Adidas
-
 import imgManifesto from '../assets/IMG_4681.PNG';
-
-// --- DATOS MOCKUP (Top Quality 1.1) ---
-const newArrivals = [
-  { 
-    id: 1, 
-    name: "Amiri Skel Top Low", 
-    brand: "Amiri",
-    price: 450000, 
-    tag: "1.1 Quality", 
-    image: imgProd1 
-  },
-  { 
-    id: 2, 
-    name: "Valentino Open Skate", 
-    brand: "Valentino",
-    price: 480000, 
-    tag: "Nuevo", 
-    image: imgProd2 
-  },
-  { 
-    id: 3, 
-    name: "Air Jordan 1 High", 
-    brand: "Nike",
-    price: 320000, 
-    tag: "Top Seller", 
-    image: imgProd3 
-  },
-  { 
-    id: 4, 
-    name: "Yeezy Boost 350 V2", 
-    brand: "Adidas",
-    price: 290000, 
-    tag: "Oferta", 
-    image: imgProd4 
-  },
-];
 
 // Datos Categorías Visuales
 const categories = [
@@ -61,6 +20,78 @@ const categories = [
 ];
 
 const Home = () => {
+  // Estado Productos
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Estado Newsletter
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState('idle'); // idle, loading, success, error
+  const [newsletterMessage, setNewsletterMessage] = useState('');
+
+  // Hook para traer la data del backend (Productos seleccionados en Admin)
+  useEffect(() => {
+    const fetchStoreConfig = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/store/config/');
+        
+        if (response.data && response.data.highlighted_products) {
+           if (response.data.highlighted_products.length > 0) {
+               setFeaturedProducts(response.data.highlighted_products);
+           }
+        }
+      } catch (error) {
+        console.error("Error al cargar configuración", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStoreConfig();
+  }, []);
+
+  // --- LÓGICA DE NEWSLETTER (SEGURA) ---
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    setNewsletterStatus('loading');
+    setNewsletterMessage('');
+
+    // 1. Sanitización Básica (Anti-XSS leve & UX)
+    const cleanEmail = newsletterEmail.trim();
+
+    // 2. Validación de Formato de Correo (Regex)
+    // Esto previene enviar scripts (<script>...) o SQL obvios antes de tocar el servidor.
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!emailRegex.test(cleanEmail)) {
+        setNewsletterStatus('error');
+        setNewsletterMessage('Por favor ingresa un correo electrónico válido.');
+        return;
+    }
+
+    try {
+        // 3. Petición Segura al Backend
+        const response = await axios.post('http://127.0.0.1:8000/api/store/newsletter/subscribe/', {
+            email: cleanEmail
+        });
+
+        // 4. Éxito
+        setNewsletterStatus('success');
+        setNewsletterMessage(response.data.message || '¡Gracias por suscribirte!');
+        setNewsletterEmail(''); // Limpiar input
+
+    } catch (error) {
+        setNewsletterStatus('error');
+        // Manejo seguro de errores sin exponer trazas del servidor
+        if (error.response && error.response.data) {
+             // Si el backend envía un error específico (ej: "correo invalido")
+             setNewsletterMessage(error.response.data.error || 'Hubo un error al suscribirte.');
+        } else {
+             setNewsletterMessage('Error de conexión. Inténtalo más tarde.');
+        }
+    }
+  };
+
   return (
     <>
       {/* 1. HERO PRINCIPAL */}
@@ -135,37 +166,48 @@ const Home = () => {
       </section>
       
       {/* 5. PRODUCTOS DESTACADOS */}
-      <ProductGrid 
-        title="Drops Recientes" 
-        products={newArrivals} 
-      />
+      {!loading && featuredProducts.length > 0 ? (
+        <ProductGrid 
+          title="Drops Recientes" 
+          products={featuredProducts} 
+        />
+      ) : !loading && featuredProducts.length === 0 ? (
+        <section className="py-24 bg-white text-center">
+            <div className="container mx-auto px-6">
+                <h2 className="font-serif text-2xl md:text-3xl text-gray-400 italic mb-6">
+                    No hay drops destacados en este momento.
+                </h2>
+                <Link to="/catalogo">
+                    <Button variant="primary">Explorar Catálogo Completo</Button>
+                </Link>
+            </div>
+        </section>
+      ) : (
+        <div className="py-24 flex justify-center">
+             <div className="animate-pulse text-vinilo-red font-bold">Cargando colección...</div>
+        </div>
+      )}
 
-      {/* 6. MANIFIESTO DE MARCA (UI Mejorado) */}
+      {/* 6. MANIFIESTO DE MARCA */}
       <section className="relative w-full min-h-[70vh] flex items-center justify-center overflow-hidden py-24">
-         {/* Fondo Imagen Fija con Overlay */}
          <div className="absolute inset-0">
             <img 
                src={imgManifesto}
                alt="Lifestyle Vinilo"
-               className="w-full h-full object-cover object-center grayscale brightness-[0.4]" // Más oscuro para mejor lectura
+               className="w-full h-full object-cover object-center grayscale brightness-[0.4]"
             />
-            {/* Gradiente para suavizar la transición con el footer y la sección anterior */}
             <div className="absolute inset-0 bg-gradient-to-b from-vinilo-black/10 via-transparent to-vinilo-black/90"></div>
          </div>
          
          <div className="relative z-10 container mx-auto px-6">
             <div className="max-w-4xl mx-auto border border-white/10 p-8 md:p-16 backdrop-blur-sm bg-black/20 text-center rounded-sm shadow-2xl">
                 <p className="text-vinilo-red font-bold uppercase tracking-[0.3em] text-xs mb-6">Manifiesto</p>
-                
                 <h2 className="font-serif text-3xl md:text-5xl lg:text-6xl text-white mb-8 italic leading-tight">
                   "No solo vendemos zapatos, vendemos <span className="text-vinilo-red not-italic">actitud</span>."
                 </h2>
-                
                 <p className="text-gray-300 font-sans mb-12 leading-relaxed max-w-lg mx-auto text-sm md:text-base tracking-wide">
                     Diseñamos para quienes caminan con propósito. Cada par es una fusión de lujo y diseño contemporáneo.
                 </p>
-                
-                {/* Contenedor del botón con margen extra inferior asegurado */}
                 <div className="pb-2">
                     <Link to="/catalogo">
                         <Button variant="outline" className="border-white text-white hover:bg-white hover:text-vinilo-black px-10 py-4 tracking-[0.2em]">
@@ -183,16 +225,43 @@ const Home = () => {
               <h2 className="font-serif text-3xl md:text-4xl italic mb-4">Únete al Club Vinilo</h2>
               <p className="text-gray-400 font-sans text-sm mb-8">Suscríbete y recibe un <span className="text-white font-bold">10% OFF</span> en tu primera compra y acceso anticipado a drops exclusivos.</p>
               
-              <form className="flex flex-col sm:flex-row gap-4">
+              {/* Formulario con Manejo de Estado */}
+              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 relative">
                   <input 
+                    id="newsletter_email"
+                    name="email"
+                    autoComplete="email"
+                    aria-label="Correo electrónico"
                     type="email" 
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
                     placeholder="Tu correo electrónico" 
-                    className="flex-1 bg-white/5 border border-white/20 text-white px-6 py-4 focus:outline-none focus:border-vinilo-red transition-colors text-sm"
+                    className="flex-1 bg-white/5 border border-white/20 text-white px-6 py-4 focus:outline-none focus:border-vinilo-red transition-colors text-sm disabled:opacity-50"
+                    disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
                   />
-                  <button className="bg-vinilo-red text-white px-8 py-4 font-bold uppercase tracking-widest text-xs hover:bg-white hover:text-vinilo-black transition-colors flex items-center justify-center gap-2">
-                      Suscribirse <ArrowRight size={14} />
+                  <button 
+                    type="submit"
+                    disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
+                    className={`bg-vinilo-red text-white px-8 py-4 font-bold uppercase tracking-widest text-xs hover:bg-white hover:text-vinilo-black transition-all flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed`}
+                  >
+                      {newsletterStatus === 'loading' ? (
+                          <>Enviando <Loader2 size={14} className="animate-spin" /></>
+                      ) : newsletterStatus === 'success' ? (
+                          <>Suscrito <CheckCircle size={14} /></>
+                      ) : (
+                          <>Suscribirse <ArrowRight size={14} /></>
+                      )}
                   </button>
               </form>
+
+              {/* Mensajes de Feedback (Error / Éxito) */}
+              {newsletterMessage && (
+                  <div className={`mt-4 text-xs font-bold flex items-center justify-center gap-2 animate-fade-in ${newsletterStatus === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                      {newsletterStatus === 'success' ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                      {newsletterMessage}
+                  </div>
+              )}
+
           </div>
       </section>
     </>

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Star, User, CheckCircle, Loader2, Lock } from 'lucide-react';
 import Button from './Button';
-import { useAuth } from '../../context/AuthContext'; // 1. Importamos el contexto
+import { useAuth } from '../../context/AuthContext';
 
 const ReviewForm = ({ productId }) => {
-  const { user, isAuthenticated } = useAuth(); // 2. Obtenemos el usuario del contexto
+  const { user, isAuthenticated } = useAuth();
 
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
@@ -17,22 +17,16 @@ const ReviewForm = ({ productId }) => {
   // --- LÓGICA DE NOMBRE COMPLETO ---
   useEffect(() => {
     if (isAuthenticated && user) {
-        // Concatenamos Nombre y Apellido traídos del Backend (Django)
         const firstName = user.first_name || '';
         const lastName = user.last_name || '';
-        
-        // Unimos quitando espacios extra
         let fullName = `${firstName} ${lastName}`.trim();
 
-        // Si por alguna razón no tiene nombre configurado, usamos el email como fallback
         if (!fullName) {
             fullName = user.email ? user.email.split('@')[0] : 'Usuario';
         }
 
-        // Establecemos el nombre en el formulario automáticamente
         setFormData(prev => ({ ...prev, name: fullName }));
     } else {
-        // Si no hay sesión, limpiamos
         setFormData(prev => ({ ...prev, name: '' }));
     }
   }, [isAuthenticated, user]);
@@ -82,7 +76,6 @@ const ReviewForm = ({ productId }) => {
             body: JSON.stringify(payload)
         });
 
-        // --- DEPURACIÓN DE ERROR ---
         if (response.ok) {
             const newReview = await response.json();
             setReviews([newReview, ...reviews]);
@@ -93,9 +86,8 @@ const ReviewForm = ({ productId }) => {
             })); 
             setIsFormOpen(false); 
         } else {
-            // AQUÍ CAPTURAMOS EL MENSAJE DEL BACKEND
             const errorData = await response.json();
-            console.log("Error Backend:", errorData); // Mira la consola del navegador
+            console.log("Error Backend:", errorData);
             alert(`Error: ${JSON.stringify(errorData)}`); 
         }
     } catch (error) {
@@ -145,12 +137,15 @@ const ReviewForm = ({ productId }) => {
             
             {/* Estrellas */}
             <div className="mb-4">
-                <label className="block text-[10px] uppercase font-bold text-gray-400 mb-2">Calificación</label>
-                <div className="flex gap-1">
+                <span className="block text-[10px] uppercase font-bold text-gray-400 mb-2">
+                    Calificación
+                </span>
+                <div className="flex gap-1" role="group" aria-label="Calificación en estrellas">
                     {[1, 2, 3, 4, 5].map((star) => (
                         <button
                             key={star}
                             type="button"
+                            aria-label={`Calificar con ${star} estrellas`} 
                             onClick={() => setFormData({...formData, rating: star})}
                             onMouseEnter={() => setHoverRating(star)}
                             onMouseLeave={() => setHoverRating(0)}
@@ -168,14 +163,20 @@ const ReviewForm = ({ productId }) => {
 
             <div className="space-y-4">
                 <div>
-                    {/* CAMPO NOMBRE AUTOMÁTICO */}
+                    {/* INPUT NOMBRE CORRECTAMENTE ETIQUETADO */}
+                    <label htmlFor="review_author" className="block text-[10px] uppercase font-bold text-gray-400 mb-2">
+                        Tu Nombre
+                    </label>
                     <div className="relative group">
                         <input 
+                            id="review_author"    
+                            name="author_name"    
+                            autoComplete="name"   
                             required
                             type="text" 
                             placeholder="Tu Nombre Completo" 
-                            value={formData.name} // Aquí ya viene el nombre concatenado
-                            readOnly={isAuthenticated} // Bloqueado si hay sesión
+                            value={formData.name} 
+                            readOnly={isAuthenticated} 
                             onChange={(e) => !isAuthenticated && setFormData({...formData, name: e.target.value})}
                             className={`
                                 w-full border p-3 text-sm focus:outline-none transition-colors
@@ -191,7 +192,13 @@ const ReviewForm = ({ productId }) => {
                     </div>
                 </div>
                 <div>
+                    {/* TEXTAREA CORRECTAMENTE ETIQUETADO */}
+                    <label htmlFor="review_comment" className="block text-[10px] uppercase font-bold text-gray-400 mb-2">
+                        Tu Opinión
+                    </label>
                     <textarea 
+                        id="review_comment"    
+                        name="comment"         
                         required
                         rows="3"
                         placeholder="Cuéntanos qué te pareció el producto..." 

@@ -31,6 +31,13 @@ class StoreConfig(models.Model):
         default=False, 
         verbose_name="Wompi Habilitado"
     )
+    home_highlighted_products = models.ManyToManyField(
+        'Product',
+        blank=True,
+        verbose_name="Productos Destacados en Home",
+        help_text="Selecciona los productos que aparecerán en la sección 'Drops Recientes' del inicio.",
+        related_name='highlighted_in_store_config'
+    )
     
     class Meta:
         verbose_name = "Configuración de Tienda"
@@ -333,3 +340,16 @@ class CatalogConfig(models.Model):
             }
         )
         return config
+
+class NewsletterSubscriber(models.Model):
+    email = models.EmailField(unique=True, verbose_name="Correo Electrónico")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Suscripción")
+
+    class Meta:
+        verbose_name = "Suscriptor Newsletter"
+        verbose_name_plural = "Suscriptores Newsletter"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.email

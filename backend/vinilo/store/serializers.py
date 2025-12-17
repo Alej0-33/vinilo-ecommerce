@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils.html import strip_tags 
-from .models import Product, Variant, Order, OrderItem, ProductImage, Review, WishlistItem, StoreConfig, CatalogConfig
+from .models import Product, Variant, Order, OrderItem, ProductImage, Review, WishlistItem, StoreConfig, CatalogConfig, NewsletterSubscriber
 
 # --- SERIALIZERS DE PRODUCTO ---
 
@@ -67,9 +67,10 @@ class WishlistItemSerializer(serializers.ModelSerializer):
 # --- SERIALIZERS DE CONFIGURACIÓN ---
 
 class StoreConfigSerializer(serializers.ModelSerializer):
+    highlighted_products = ProductSimpleSerializer(source='home_highlighted_products', many=True, read_only=True)
     class Meta:
         model = StoreConfig
-        fields = ['shipping_cost_cod', 'free_shipping_threshold', 'is_cod_enabled', 'is_wompi_enabled']
+        fields = ['shipping_cost_cod', 'free_shipping_threshold', 'is_cod_enabled', 'is_wompi_enabled','highlighted_products']
 
 class CatalogConfigSerializer(serializers.ModelSerializer):
     class Meta:
@@ -265,3 +266,12 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
     def get_created_at_formatted(self, obj):
         # Formato legible: "15 Dic, 2025"
         return obj.created_at.strftime("%d %b, %Y")
+
+class NewsletterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NewsletterSubscriber
+        fields = ['email']
+
+    def validate_email(self, value):
+        # Normalizar el correo a minúsculas
+        return value.lower()

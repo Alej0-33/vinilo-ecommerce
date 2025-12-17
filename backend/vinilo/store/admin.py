@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, Variant, Order, OrderItem, ProductImage, Review, StoreConfig, CatalogConfig
+from .models import Product, Variant, Order, OrderItem, ProductImage, Review, StoreConfig, CatalogConfig, NewsletterSubscriber
 
 # --- HELPER PARA MONEDA COP ---
 def format_cop(value):
@@ -14,8 +14,12 @@ def format_cop(value):
 @admin.register(StoreConfig)
 class StoreConfigAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'shipping_cost_display', 'free_shipping_display', 'is_cod_enabled', 'is_wompi_enabled')
-    
+    filter_horizontal = ('home_highlighted_products',) 
     fieldsets = (
+        ('Destacados en Home', {
+            'fields': ('home_highlighted_products',),
+            'description': 'Elige los productos para mostrar en la página principal.'
+        }),
         ('Métodos de Pago', {
             'fields': ('is_cod_enabled', 'is_wompi_enabled'),
             'description': 'Activa o desactiva los métodos de pago disponibles.'
@@ -432,3 +436,15 @@ class CatalogConfigAdmin(admin.ModelAdmin):
         css = {
             'all': ('admin/css/catalog_config.css',)
         }
+
+@admin.register(NewsletterSubscriber)
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    list_display = ('email', 'created_at', 'is_active')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('email',)
+    ordering = ('-created_at',)
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('email', 'created_at')
+        return ('created_at',)
