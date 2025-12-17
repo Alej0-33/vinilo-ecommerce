@@ -36,7 +36,7 @@ const Footer = () => {
                 <a href="https://www.instagram.com/v1nilostore" className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:border-vinilo-red hover:bg-vinilo-red hover:text-white transition-all duration-300">
                   <Instagram size={18} />
                 </a>
-                <a href="#" className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:border-vinilo-red hover:bg-vinilo-red hover:text-white transition-all duration-300">
+                <a href="https://www.facebook.com/profile.php?viewas=100000686899395&id=61584597120116" className="w-10 h-10 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:border-vinilo-red hover:bg-vinilo-red hover:text-white transition-all duration-300">
                   <Facebook size={18} />
                 </a>
               </div>

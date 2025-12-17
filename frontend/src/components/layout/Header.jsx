@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom'; // 1. Importar useLocation para resaltar activo
+import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, Search, Menu, X, User } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext'; 
 
 const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => { 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const { cartCount } = useCart(); 
-  const location = useLocation(); // 2. Obtener ubicación actual para lógica de resaltado
+  const { user, isAuthenticated } = useAuth(); 
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,18 +20,15 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 3. Rutas actualizadas con Query Params
   const navLinks = [
     { name: 'INICIO', path: '/', isHighlight: false },
-    { name: 'CATÁLOGO', path: '/catalogo', isHighlight: true }, // Muestra todo
+    { name: 'CATÁLOGO', path: '/catalogo', isHighlight: true }, 
     { name: 'HOMBRE', path: '/catalogo?genero=hombre', isHighlight: false }, 
     { name: 'MUJER', path: '/catalogo?genero=mujer', isHighlight: false }
   ];
 
-  // Helper para saber si un link está activo (incluyendo query params)
   const isActive = (linkPath) => {
       if (linkPath === '/') return location.pathname === '/';
-      // Compara pathname + search (query) para coincidencia exacta en filtros
       return (location.pathname + location.search) === linkPath || 
              (linkPath === '/catalogo' && location.pathname === '/catalogo' && location.search === ''); 
   };
@@ -42,20 +42,22 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
             : 'bg-transparent text-vinilo-black py-6'
         }`}
       >
-        <div className="container mx-auto px-6 flex justify-between items-center">
+        <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
           
-          <div className="flex items-center gap-4 md:hidden">
+          {/* IZQUIERDA MÓVIL: Menú + Buscar */}
+          <div className="flex items-center gap-3 md:hidden">
             <button onClick={() => setIsMobileMenuOpen(true)}> <Menu size={24} /> </button>
             <button onClick={onOpenSearch}><Search size={20} /></button>
           </div>
 
+          {/* LOGO CENTRADO */}
           <div className="flex-1 md:flex-none text-center md:text-left">
-            <Link to="/" className="font-serif text-3xl font-bold tracking-tighter italic">
+            <Link to="/" className="font-serif text-2xl md:text-3xl font-bold tracking-tighter italic">
               Vinilo<span className="text-vinilo-red">.</span>
             </Link>
           </div>
 
-          {/* Desktop Nav */}
+          {/* CENTRO DESKTOP: Navegación */}
           <nav className="hidden md:flex gap-10 mx-auto">
             {navLinks.map((link) => {
                const active = isActive(link.path);
@@ -69,7 +71,6 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
                     `}
                 >
                     {link.name}
-                    {/* Indicador de activo */}
                     <span className={`absolute -bottom-2 left-0 h-0.5 bg-vinilo-red transition-all duration-300 
                         ${active ? 'w-full' : 'w-0 group-hover:w-full'}`}>
                     </span>
@@ -78,13 +79,19 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
             })}
           </nav>
 
-          <div className="flex items-center gap-6">
+          {/* DERECHA: Iconos (Usuario + Carrito) */}
+          <div className="flex items-center gap-4 md:gap-6 justify-end">
+            
+            {/* Buscar solo Desktop (en móvil está a la izquierda) */}
             <button onClick={onOpenSearch} className="hidden md:block hover:text-vinilo-red transition-colors">
                <Search size={20} />
             </button>
-            <button onClick={onOpenAccount} className="hidden md:block hover:text-vinilo-red transition-colors">
-              <User size={20} />
+            
+            {/* --- CORRECCIÓN AQUÍ: Eliminado 'hidden md:block' para que aparezca siempre --- */}
+            <button onClick={onOpenAccount} className="hover:text-vinilo-red transition-colors">
+              <User size={20} className={isAuthenticated ? "text-vinilo-black fill-current" : ""} />
             </button>
+
             <button onClick={onOpenCart} className="relative hover:text-vinilo-red transition-colors">
               <ShoppingBag size={20} />
               {cartCount > 0 && (
@@ -97,11 +104,11 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
         </div>
       </header>
 
-      {/* Mobile Menu Sidebar */}
-      <div className={`fixed inset-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 bg-white`}>
+      {/* MOBILE MENU SIDEBAR */}
+      <div className={`fixed inset-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 bg-white shadow-2xl`}>
         <div className="p-6 flex flex-col h-full">
-            <div className="flex justify-between items-center mb-10">
-                <h2 className="font-serif text-2xl italic">Menú</h2>
+            <div className="flex justify-between items-center mb-10 border-b border-gray-100 pb-4">
+                <span className="font-serif text-2xl italic text-vinilo-black">Menú</span>
                 <button onClick={() => setIsMobileMenuOpen(false)}><X size={24} /></button>
             </div>
              
@@ -121,12 +128,23 @@ const Header = ({ onOpenCart, onOpenSearch, onOpenAccount }) => {
                 ))}
              </nav>
 
-             <div className="mt-auto border-t border-gray-100 pt-6">
+             {/* Sección Inferior del Menú Móvil Mejorada */}
+             <div className="mt-auto pt-6 border-t border-gray-100">
                 <button 
                     onClick={() => { setIsMobileMenuOpen(false); onOpenAccount(); }} 
-                    className="text-sm font-sans uppercase tracking-widest text-gray-500 hover:text-vinilo-red transition-colors"
+                    className="flex items-center gap-3 w-full py-3 px-4 bg-gray-50 rounded-lg group hover:bg-vinilo-black transition-colors"
                 >
-                    Mi Cuenta
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 group-hover:border-gray-600">
+                        <User size={20} className="text-vinilo-black" />
+                    </div>
+                    <div className="text-left">
+                        <span className="block text-xs font-bold uppercase tracking-widest text-vinilo-black group-hover:text-white">
+                            {isAuthenticated ? `Hola, ${user?.first_name || 'Usuario'}` : 'Mi Cuenta'}
+                        </span>
+                        <span className="block text-[10px] text-gray-500 group-hover:text-gray-400">
+                            {isAuthenticated ? 'Ver perfil y pedidos' : 'Inicia sesión o regístrate'}
+                        </span>
+                    </div>
                 </button>
              </div>
         </div>

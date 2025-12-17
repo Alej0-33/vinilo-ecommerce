@@ -67,7 +67,7 @@ const ResetPassword = () => {
             <div className="mx-auto w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 border border-blue-100">
                 <ShieldCheck size={24}/>
             </div>
-            <h2 className="font-serif text-3xl text-vinilo-black mb-2">Nueva Seguridad</h2>
+            <h2 className="font-serif text-3xl text-vinilo-black mb-2">Cambia tu Contraseña</h2>
             <p className="text-sm text-gray-500">Crea una contraseña segura para recuperar el acceso a tu cuenta.</p>
         </div>
 
