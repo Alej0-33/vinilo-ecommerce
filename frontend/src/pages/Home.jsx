@@ -33,8 +33,7 @@ const Home = () => {
   useEffect(() => {
     const fetchStoreConfig = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/store/config/');
-        
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/store/config/`);        
         if (response.data && response.data.highlighted_products) {
            if (response.data.highlighted_products.length > 0) {
                setFeaturedProducts(response.data.highlighted_products);
@@ -71,7 +70,7 @@ const Home = () => {
 
     try {
         // 3. Petición Segura al Backend
-        const response = await axios.post('http://127.0.0.1:8000/api/store/newsletter/subscribe/', {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/store/newsletter/subscribe/`, {
             email: cleanEmail
         });
 

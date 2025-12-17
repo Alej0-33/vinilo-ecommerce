@@ -135,12 +135,13 @@ const Catalog = () => {
     category: [],
     sizes: []
   });
+  const BASE_URL = import.meta.VITE_API_URL;
 
   // 0. FETCH CONFIGURACIÓN DEL CATÁLOGO
   useEffect(() => {
     const fetchCatalogConfig = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/store/catalog-config/');
+        const response = await fetch(`${BASE_URL}store/catalog-config/`);
         if (response.ok) {
           const data = await response.json();
           setCatalogConfig(data);
@@ -157,7 +158,7 @@ const Catalog = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const baseUrl = new URL('http://127.0.0.1:8000/api/store/products/');
+        const baseUrl = new URL(`${BASE_URL}/store/products/`);
         
         // A. Agregar Filtro de Género
         if (genderUrlParam) {

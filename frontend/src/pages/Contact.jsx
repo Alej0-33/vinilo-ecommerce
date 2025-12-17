@@ -2,6 +2,12 @@ import React from 'react';
 import { Mail, Phone, MapPin, Send, MessageSquare } from 'lucide-react';
 
 const Contact = () => {
+  const companyInfo = {
+    email: import.meta.env.VITE_STORE_EMAIL,
+    phone: import.meta.env.VITE_STORE_PHONE,
+    address: import.meta.env.VITE_STORE_ADDRESS,
+    whatsappNumber: import.meta.env.VITE_STORE_WHATSAPP
+  };
   return (
     <div className="bg-white min-h-screen">
       <div className="container mx-auto px-6 py-12">
@@ -27,8 +33,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase text-gray-400 mb-1">Email</p>
-                    <p className="text-sm text-gray-700">contacto@vinilostore.com</p>
-                    <p className="text-sm text-gray-700">soporte@vinilostore.com</p>
+                    <p className="text-sm text-gray-700">{companyInfo.email}</p>
                   </div>
                 </div>
 
@@ -38,8 +43,8 @@ const Contact = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase text-gray-400 mb-1">Teléfono</p>
-                    <p className="text-sm text-gray-700">+57 300 123 4567</p>
-                    <p className="text-xs text-gray-400 mt-1">Lunes a Viernes, 9am - 6pm</p>
+                    <p className="text-sm text-gray-700">{companyInfo.phone}</p>
+                    <p className="text-xs text-gray-400 mt-1">Lunes a Viernes, 6am - 6pm</p>
                   </div>
                 </div>
 
@@ -49,8 +54,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase text-gray-400 mb-1">Ubicación</p>
-                    <p className="text-sm text-gray-700">Calle 123 # 45-67</p>
-                    <p className="text-sm text-gray-700">Medellín, Colombia</p>
+                    <p className="text-sm text-gray-700">{companyInfo.address}</p>
                   </div>
                 </div>
               </div>
@@ -65,7 +69,10 @@ const Contact = () => {
                  <p className="font-bold text-gray-800">Chat en WhatsApp</p>
                  <p className="text-xs text-gray-600">Respuesta inmediata</p>
                </div>
-               <button className="ml-auto bg-white text-[#25D366] px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#25D366] hover:text-white transition-colors">
+               <button 
+                 onClick={() => window.open(`https://wa.me/${companyInfo.whatsappNumber}`, '_blank')}
+                 className="ml-auto bg-white text-[#25D366] px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#25D366] hover:text-white transition-colors"
+               >
                  CHATEAR
                </button>
             </div>

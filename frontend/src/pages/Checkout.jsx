@@ -13,7 +13,7 @@ import nequi from '../assets/nequi.png';
 import pse from '../assets/pse.png';
 import bancolombia from '../assets/bancolombia.png';
 
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 // Helper para formatear moneda colombiana
 const formatCOP = (value) => {

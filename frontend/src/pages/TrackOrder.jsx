@@ -9,7 +9,7 @@ const TrackOrder = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   // Configura tu URL base (idealmente desde variables de entorno)
-  const BASE_URL = 'http://127.0.0.1:8000/api/store';
+  const BASE_URL = import.meta.VITE_API_URL;
 
   const handleSearch = async (e) => {
     e.preventDefault();

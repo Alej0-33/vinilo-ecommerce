@@ -18,17 +18,17 @@ import {
 } from 'lucide-react';
 
 const TermsConditions = () => {
-  // Datos de la empresa
   const companyInfo = {
-    name: "Vinilo Store",
-    legalName: "VINILO STORE S.A.S.",
-    nit: "901.XXX.XXX-X",
-    email: "contacto@vinilostore.com",
-    phone: "+57 300 123 4567",
-    address: "Calle 123 # 45-67, Medellín, Antioquia, Colombia",
-    website: "www.vinilostore.com",
+    name: import.meta.env.VITE_STORE_NAME,
+    legalName: import.meta.env.VITE_LEGAL_NAME,
+    nit: import.meta.env.VITE_STORE_NIT,
+    email: import.meta.env.VITE_STORE_EMAIL,
+    phone: import.meta.env.VITE_STORE_PHONE,
+    address: import.meta.env.VITE_STORE_ADDRESS,
+    website: import.meta.env.VITE_STORE_WEBSITE,
     lastUpdate: "14 de Diciembre de 2024"
   };
+
 
   const sections = [
     {

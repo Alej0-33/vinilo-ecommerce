@@ -19,12 +19,12 @@ import {
 const PrivacyPolicy = () => {
   // Datos de la empresa
   const companyInfo = {
-    name: "Vinilo Store",
-    legalName: "VINILO STORE S.A.S.",
-    nit: "901.XXX.XXX-X",
-    email: "protecciondatos@vinilostore.com", 
-    phone: "+57 300 123 4567",
-    address: "Calle 123 # 45-67, Medellín, Antioquia, Colombia",
+    name: import.meta.env.VITE_STORE_NAME,
+    legalName: import.meta.env.VITE_LEGAL_NAME,
+    nit: import.meta.env.VITE_STORE_NIT,
+    email: import.meta.env.VITE_STORE_EMAIL,
+    phone: import.meta.env.VITE_STORE_PHONE,
+    address: import.meta.env.VITE_STORE_ADDRESS,
     lastUpdate: "14 de Diciembre de 2024"
   };
 

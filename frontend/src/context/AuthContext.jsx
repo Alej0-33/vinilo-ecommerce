@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const BASE_URL = 'http://127.0.0.1:8000/api';
+  const BASE_URL = import.meta.VITE_API_URL;
 
   // --- 1. VERIFICAR SESIÓN AL CARGAR APP ---
   useEffect(() => {

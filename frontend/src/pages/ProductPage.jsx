@@ -18,11 +18,13 @@ const ProductPage = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [images, setImages] = useState([]);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   // Fetch del producto individual
   useEffect(() => {
     const fetchProductDetail = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/store/products/${id}/`);
+        const response = await fetch(`${API_URL}/store/products/${id}/`);
         if (!response.ok) throw new Error('Producto no encontrado');
         const data = await response.json();
         setProduct(data);

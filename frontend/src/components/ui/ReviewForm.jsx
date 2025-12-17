@@ -13,6 +13,7 @@ const ReviewForm = ({ productId }) => {
   const [formData, setFormData] = useState({ name: '', comment: '', rating: 0 });
   const [hoverRating, setHoverRating] = useState(0); 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const BASE_URL = import.meta.env.VITE_API_URL;
 
   // --- LÓGICA DE NOMBRE COMPLETO ---
   useEffect(() => {
@@ -37,7 +38,7 @@ const ReviewForm = ({ productId }) => {
 
     const fetchReviews = async () => {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/store/reviews/?product=${productId}`);
+            const response = await fetch(`${BASE_URL}/store/reviews/?product=${productId}`);
             if (response.ok) {
                 const data = await response.json();
                 setReviews(data);
@@ -70,7 +71,7 @@ const ReviewForm = ({ productId }) => {
             comment: formData.comment
         };
 
-        const response = await fetch('http://127.0.0.1:8000/api/store/reviews/', {
+        const response = await fetch(`${BASE_URL}/store/reviews/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
