@@ -11,7 +11,7 @@ const Wishlist = () => {
   const navigate = useNavigate();
 
   // URL de tu Backend (ajústala si es diferente)
-  const BASE_URL = import.meta.VITE_API_URL;
+  const BASE_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     // Si no está logueado, lo mandamos al login o home

@@ -135,13 +135,13 @@ const Catalog = () => {
     category: [],
     sizes: []
   });
-  const BASE_URL = import.meta.VITE_API_URL;
+  const BASE_URL = import.meta.env.VITE_API_URL;
 
   // 0. FETCH CONFIGURACIÓN DEL CATÁLOGO
   useEffect(() => {
     const fetchCatalogConfig = async () => {
       try {
-        const response = await fetch(`${BASE_URL}store/catalog-config/`);
+        const response = await fetch(`${BASE_URL}/store/catalog-config/`);
         if (response.ok) {
           const data = await response.json();
           setCatalogConfig(data);

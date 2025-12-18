@@ -47,13 +47,13 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '10/minute',
-        'user': '100/minute',
+        'anon': '20/minute',
+        'user': '120/minute',
         'auth_attempts': '5/minute',
 
         'store_orders': '3/minute', 
         'store_reviews': '5/hour',   
-        'store_tracking': '10/minute',
+        'store_tracking': '5/minute',
         'newsletter_add': '3/minute',
     }
 }
