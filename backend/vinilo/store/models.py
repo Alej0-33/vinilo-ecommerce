@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 from django.core.validators import MinValueValidator, MaxValueValidator 
-
+import random
 # --- MODELO DE CONFIGURACIÓN DE TIENDA (SINGLETON) ---
 class StoreConfig(models.Model):
     """
@@ -145,8 +145,8 @@ class Order(models.Model):
         ('CANCELED', 'Cancelado'),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, verbose_name="Referencia de Orden")
-    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, verbose_name="ID Interno")
+    order_code = models.CharField(max_length=15, unique=True, editable=False,verbose_name="Número de Pedido", help_text="Código único para tracking (ej: VNL-A1B2C3)")
     # Cliente
     customer_name = models.CharField(max_length=200, verbose_name="Nombre Cliente")
     customer_id_number = models.CharField(max_length=20, verbose_name="Cédula / NIT")
@@ -180,11 +180,31 @@ class Order(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Pedido #{str(self.id)[:8]} - {self.customer_name}"
+        return f"Pedido #{str(self.order_code)} - {self.customer_name}"
+    
+    def _generate_order_code(self):
+        """
+        Genera un código único tipo: VNL-A1B2C3
+        - Prefijo de marca (VNL = Vinilo)
+        - 6 caracteres alfanuméricos (sin caracteres confusos como 0/O, 1/I/L)
+        """
+        # Caracteres seguros (sin ambiguos: 0, O, I, L, 1)
+        safe_chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+        
+        while True:
+            random_part = ''.join(random.choices(safe_chars, k=6))
+            code = f"VNL-{random_part}"
+            
+            if not Order.objects.filter(order_code=code).exists():
+                return code
 
     def save(self, *args, **kwargs):
-        # 1. Capturar estado previo antes de guardar
-        is_new = self.pk is None
+        # 1. Generar código único si es nueva orden
+        if not self.order_code:
+            self.order_code = self._generate_order_code()
+        
+        # 2. Capturar estado previo antes de guardar
+        is_new = self._state.adding
         old_status = None
         old_tracking = None
         
@@ -196,22 +216,17 @@ class Order(models.Model):
             except Order.DoesNotExist:
                 pass
 
-        # 2. Guardar cambios en la base de datos
+        # 3. Guardar cambios en la base de datos
         super().save(*args, **kwargs)
 
-        # 3. Lógica para Cola de Correos
+        # 4. Lógica para Cola de Correos
         try:
-            # Caso A: Pedido Nuevo -> Crear tarea de confirmación
             if is_new:
                 OrderEmailQueue.objects.create(
                     order=self,
                     email_type='CONFIRMATION'
                 )
-            
-            # Caso B: Cambio de estado o número de guía -> Crear tarea de actualización
             elif old_status and (self.status != old_status or (self.tracking_number and self.tracking_number != old_tracking)):
-                
-                # Verificar si ya existe una tarea pendiente igual para evitar duplicados (spam)
                 has_pending = OrderEmailQueue.objects.filter(
                     order=self,
                     email_type='UPDATE',
@@ -224,7 +239,6 @@ class Order(models.Model):
                         email_type='UPDATE'
                     )
         except Exception as e:
-            # Si falla la creación de la cola, no detenemos el guardado del pedido, solo imprimimos error
             print(f"Error al crear tarea de correo: {e}")
 
 

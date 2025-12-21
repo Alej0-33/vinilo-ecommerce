@@ -253,7 +253,7 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
         model = Order
         # Solo exponemos datos no sensibles útiles para el rastreo público
         fields = [
-            'id', 
+            'order_code', 
             'status', 
             'status_display', 
             'created_at', 

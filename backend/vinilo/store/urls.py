@@ -13,10 +13,9 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'products', ProductViewSet)
+router.register(r'products', ProductViewSet, basename='product')
 router.register(r'orders', OrderViewSet, basename='order')
-router.register(r'reviews', ReviewViewSet)
-
+router.register(r'reviews', ReviewViewSet, basename='review')
 urlpatterns = [
     path('', include(router.urls)),
     
@@ -27,6 +26,6 @@ urlpatterns = [
     # Wishlist
     path('wishlist/', WishlistView.as_view(), name='wishlist-list'),
     path('wishlist/toggle/<uuid:product_id>/', ToggleWishlistView.as_view(), name='wishlist-toggle'),
-    path('track/<str:order_id>/', TrackOrderView.as_view(), name='track-order'),
+    path('track/<str:order_code>/', TrackOrderView.as_view(), name='track-order'),
      path('newsletter/subscribe/', NewsletterSubscriptionView.as_view(), name='newsletter-subscribe'),
 ]

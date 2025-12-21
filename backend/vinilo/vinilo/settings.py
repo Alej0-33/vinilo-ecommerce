@@ -47,15 +47,26 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '20/minute',
-        'user': '120/minute',
-        'auth_attempts': '5/minute',
-
-        'store_orders': '3/minute', 
-        'store_reviews': '5/hour',   
-        'store_tracking': '5/minute',
-        'newsletter_add': '3/minute',
-    }
+    # --- GLOBALES ---
+    'anon': '60/minute',          # Subido: 20 era muy restrictivo para navegación
+    'user': '200/minute',         # Usuarios autenticados
+    
+    # --- AUTH (sensibles) ---
+    'auth_attempts': '5/minute',  # Login, registro, reset ✓
+    
+    # --- STORE (transaccionales) ---
+    'store_orders': '5/minute',   # Crear órdenes (subido de 3)
+    'store_reviews': '3/hour',    # Bajado: 5/hora es mucho para reseñas
+    'store_tracking': '10/minute', # Consultar estado (subido)
+    
+    # --- STORE (lectura) ---
+    'store_products': '100/minute', # NUEVO: Catálogo
+    'store_wishlist': '30/minute',  # NUEVO: Wishlist toggle
+    'store_config': '20/minute',    # NUEVO: Configuraciones
+    
+    # --- NEWSLETTER ---
+    'newsletter_add': '3/minute',  # ✓
+}
 }
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), # Token corto por seguridad

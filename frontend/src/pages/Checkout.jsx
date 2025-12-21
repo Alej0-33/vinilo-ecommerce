@@ -176,7 +176,7 @@ const Checkout = () => {
               <div>
                 <p className="text-[10px] font-bold uppercase text-gray-400">Número de Pedido</p>
                 <p className="font-mono text-lg text-vinilo-black font-bold">
-                  #{String(orderSuccess.id).slice(0, 8).toUpperCase()}
+                  {orderSuccess.order_code}
                 </p>
               </div>
             </div>
