@@ -11,7 +11,7 @@ import Footer from './Footer';
 import CartDrawer from '../ui/CartDrawer';
 import SearchOverlay from '../ui/SearchOverlay';
 import AuthModal from '../ui/AuthModal';
-
+import WhatsAppButton from '../ui/WhatsAppButton'; 
 const Layout = () => {
   // Estado local para Search y Auth
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -43,6 +43,7 @@ const Layout = () => {
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <WhatsAppButton />
     </div>
   );
 };
