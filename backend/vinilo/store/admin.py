@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, Variant, Order, OrderItem, ProductImage, Review, StoreConfig, CatalogConfig, NewsletterSubscriber
+from .models import Product, Variant, Order, OrderItem, ProductImage, Review, StoreConfig, CatalogConfig, NewsletterSubscriber, ContactRequest
 
 # --- HELPER PARA MONEDA COP ---
 def format_cop(value):
@@ -445,3 +445,115 @@ class NewsletterSubscriberAdmin(admin.ModelAdmin):
         if obj:
             return ('email', 'created_at')
         return ('created_at',)
+
+@admin.register(ContactRequest)
+class ContactRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        'status_badge',
+        'status',
+        'subject_display',
+        'full_name_display',
+        'email',
+        'message_preview',
+        'created_at_formatted'
+    )
+    
+    list_filter = (
+        'status',
+        'subject',
+        'created_at'
+    )
+    
+    search_fields = ('first_name', 'last_name', 'email', 'message')
+    
+    list_editable = ('status',)  # Permitir cambiar estado desde la lista
+    
+    readonly_fields = ('first_name', 'last_name', 'email', 'subject', 'message', 'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Estado de la Solicitud', {
+            'fields': ('status',),
+        }),
+        ('Datos del Cliente', {
+            'fields': (('first_name', 'last_name'), 'email'),
+        }),
+        ('Mensaje', {
+            'fields': ('subject', 'message'),
+        }),
+        ('Notas del Equipo', {
+            'fields': ('admin_notes',),
+            'description': 'Espacio para notas internas sobre esta solicitud.'
+        }),
+        ('Fechas', {
+            'fields': (('created_at', 'updated_at'),),
+            'classes': ('collapse',),
+        }),
+    )
+    
+    list_per_page = 25
+    date_hierarchy = 'created_at'
+    
+    # --- Métodos de display ---
+    def status_badge(self, obj):
+        colors = {
+            'PENDING': '#f59e0b',   # Amarillo
+            'READ': '#3b82f6',      # Azul
+            'REPLIED': '#10b981',   # Verde
+            'CLOSED': '#6b7280',    # Gris
+        }
+        color = colors.get(obj.status, '#6b7280')
+        return format_html(
+            '<span style="background: {}; color: white; padding: 4px 10px; '
+            'border-radius: 12px; font-size: 11px; font-weight: bold;">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_badge.short_description = "Estado"
+    status_badge.admin_order_field = 'status'
+    
+    def subject_display(self, obj):
+        icons = {
+            'GENERAL': '💬',
+            'ORDER_STATUS': '📦',
+            'RETURNS': '🔄',
+            'WARRANTY': '🛡️',
+        }
+        icon = icons.get(obj.subject, '📩')
+        return format_html(
+            '<span style="background: #8B1A1A; color: white; padding: 4px 10px; '
+            'border-radius: 4px; font-size: 11px;">{} {}</span>',
+            icon, obj.get_subject_display()
+        )
+    subject_display.short_description = "Asunto"
+    subject_display.admin_order_field = 'subject'
+    
+    def full_name_display(self, obj):
+        return format_html('<strong>{}</strong>', obj.full_name)
+    full_name_display.short_description = "Cliente"
+    
+    def message_preview(self, obj):
+        preview = obj.message[:60] + '...' if len(obj.message) > 60 else obj.message
+        return preview
+    message_preview.short_description = "Mensaje"
+    
+    def created_at_formatted(self, obj):
+        return obj.created_at.strftime("%d/%m/%Y %H:%M")
+    created_at_formatted.short_description = "Fecha"
+    created_at_formatted.admin_order_field = 'created_at'
+    
+    # --- Acciones masivas ---
+    actions = ['mark_as_read', 'mark_as_replied', 'mark_as_closed']
+    
+    @admin.action(description="📖 Marcar como leído")
+    def mark_as_read(self, request, queryset):
+        updated = queryset.update(status='READ')
+        self.message_user(request, f'{updated} solicitud(es) marcada(s) como leída(s).')
+    
+    @admin.action(description="✅ Marcar como respondido")
+    def mark_as_replied(self, request, queryset):
+        updated = queryset.update(status='REPLIED')
+        self.message_user(request, f'{updated} solicitud(es) marcada(s) como respondida(s).')
+    
+    @admin.action(description="🔒 Marcar como cerrado")
+    def mark_as_closed(self, request, queryset):
+        updated = queryset.update(status='CLOSED')
+        self.message_user(request, f'{updated} solicitud(es) marcada(s) como cerrada(s).')

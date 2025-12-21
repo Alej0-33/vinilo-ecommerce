@@ -401,7 +401,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label htmlFor="city" className="text-xs font-bold uppercase text-gray-500">Ciudad *</label>
+                  <label htmlFor="city" className="text-xs font-bold uppercase text-gray-500">Ciudad / Municipio *</label>
                   <input 
                     id="city"
                     required 
@@ -411,7 +411,7 @@ const Checkout = () => {
                     value={formData.city} 
                     onChange={handleInputChange} 
                     className="w-full border border-gray-200 p-3 text-sm focus:outline-none focus:border-vinilo-black transition-colors bg-vinilo-gray/20 rounded-sm" 
-                    placeholder="Medellín" 
+                    placeholder="Medellín , Jardin etc..." 
                   />
                 </div>
                 <div className="space-y-1">

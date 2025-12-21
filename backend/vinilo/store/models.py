@@ -155,7 +155,7 @@ class Order(models.Model):
     
     # Envío
     shipping_address = models.TextField(verbose_name="Dirección de Envío")
-    city = models.CharField(max_length=100, verbose_name="Ciudad")
+    city = models.CharField(max_length=100, verbose_name="Ciudad / Municipio")
     shipping_department = models.CharField(max_length=100, verbose_name="Departamento") 
     zip_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Código Postal")
     notes = models.TextField(blank=True, null=True, verbose_name="Notas del Pedido")
@@ -367,3 +367,40 @@ class NewsletterSubscriber(models.Model):
 
     def __str__(self):
         return self.email
+
+# --- MODELO DE CONTACTO ---
+class ContactRequest(models.Model):
+    SUBJECT_CHOICES = [
+        ('GENERAL', 'Consulta general'),
+        ('ORDER_STATUS', 'Estado de mi pedido'),
+        ('RETURNS', 'Cambios y Devoluciones'),
+        ('WARRANTY', 'Garantías'),
+    ]
+    STATUS_CHOICES = [
+        ('PENDING', 'Pendiente'),
+        ('READ', 'Leído'),
+        ('REPLIED', 'Respondido'),
+        ('CLOSED', 'Cerrado'),
+    ]
+
+    first_name = models.CharField(max_length=100, verbose_name="Nombre")
+    last_name = models.CharField(max_length=100, verbose_name="Apellido")
+    email = models.EmailField(verbose_name="Correo Electrónico")
+    subject = models.CharField(max_length=20, choices=SUBJECT_CHOICES, verbose_name="Asunto")
+    message = models.TextField(verbose_name="Mensaje")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING', verbose_name="Estado")
+    admin_notes = models.TextField(blank=True, null=True, verbose_name="Notas internas")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de envío")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Última actualización")
+
+    class Meta:
+        verbose_name = "Solicitud de Contacto"
+        verbose_name_plural = "Solicitudes de Contacto"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_subject_display()} - {self.first_name} {self.last_name}"
+    
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"

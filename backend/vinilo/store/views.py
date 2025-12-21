@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.throttling import ScopedRateThrottle
 from django_filters import rest_framework as django_filters
-from .models import Product, Order, Review, WishlistItem, StoreConfig, CatalogConfig, NewsletterSubscriber
+from .models import Product, Order, Review, WishlistItem, StoreConfig, CatalogConfig, NewsletterSubscriber, ContactRequest
 from .serializers import (
     ProductSerializer,
     OrderSerializer,
@@ -16,7 +16,9 @@ from .serializers import (
     StoreConfigSerializer,
     OrderTrackingSerializer,
     CatalogConfigSerializer,
-    NewsletterSerializer
+    NewsletterSerializer,
+    ContactRequestSerializer
+
 )
 
 
@@ -225,3 +227,23 @@ class NewsletterSubscriptionView(APIView):
             return Response({'message': 'Ya estás suscrito a nuestro newsletter.'}, status=status.HTTP_200_OK)
 
         return Response({'message': '¡Suscripción exitosa!'}, status=status.HTTP_201_CREATED)
+# --- CONTACTO ---
+class ContactRequestView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'contact_form'
+
+    def post(self, request):
+        serializer = ContactRequestSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': '¡Mensaje enviado! Te responderemos pronto.'
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils.html import strip_tags 
-from .models import Product, Variant, Order, OrderItem, ProductImage, Review, WishlistItem, StoreConfig, CatalogConfig, NewsletterSubscriber
+from .models import Product, Variant, Order, OrderItem, ProductImage, Review, WishlistItem, StoreConfig, CatalogConfig, NewsletterSubscriber, ContactRequest
 
 # --- SERIALIZERS DE PRODUCTO ---
 
@@ -275,3 +275,26 @@ class NewsletterSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         # Normalizar el correo a minúsculas
         return value.lower()
+# --- SERIALIZER DE CONTACTO ---
+class ContactRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactRequest
+        fields = ['first_name', 'last_name', 'email', 'subject', 'message']
+    
+    def validate_first_name(self, value):
+        return strip_tags(value).strip()
+    
+    def validate_last_name(self, value):
+        return strip_tags(value).strip()
+    
+    def validate_message(self, value):
+        clean_message = strip_tags(value).strip()
+        if len(clean_message) < 10:
+            raise serializers.ValidationError("El mensaje debe tener al menos 10 caracteres.")
+        return clean_message
+    
+    def validate_subject(self, value):
+        valid_subjects = ['GENERAL', 'ORDER_STATUS', 'RETURNS', 'WARRANTY']
+        if value not in valid_subjects:
+            raise serializers.ValidationError("Asunto no válido.")
+        return value

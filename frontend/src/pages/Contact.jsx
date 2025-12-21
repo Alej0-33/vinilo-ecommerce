@@ -1,13 +1,58 @@
-import React from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Phone, MapPin, Send, MessageSquare, Loader2, CheckCircle } from 'lucide-react';
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    subject: 'GENERAL',
+    message: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(null);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
   const companyInfo = {
     email: import.meta.env.VITE_STORE_EMAIL,
     phone: import.meta.env.VITE_STORE_PHONE,
     address: import.meta.env.VITE_STORE_ADDRESS,
     whatsappNumber: import.meta.env.VITE_STORE_WHATSAPP
   };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/store/contact/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.errors ? 'Por favor revisa los campos.' : 'Error al enviar.');
+      }
+
+      setSuccess(true);
+      setFormData({ first_name: '', last_name: '', email: '', subject: 'GENERAL', message: '' });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white min-h-screen">
       <div className="container mx-auto px-6 py-12">
@@ -81,42 +126,110 @@ const Contact = () => {
           {/* Columna Derecha: Formulario */}
           <div className="bg-white">
             <h3 className="font-serif text-xl text-vinilo-black mb-6">Envíanos un mensaje</h3>
-            <form className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Nombre</label>
-                  <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black" />
+            
+            {success ? (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
+                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                <h4 className="font-bold text-green-800 mb-2">¡Mensaje enviado!</h4>
+                <p className="text-sm text-green-600">Te responderemos lo antes posible.</p>
+                <button 
+                  onClick={() => setSuccess(false)}
+                  className="mt-4 text-sm text-green-700 underline"
+                >
+                  Enviar otro mensaje
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold uppercase text-gray-500">Nombre</label>
+                    <input 
+                      type="text" 
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      required
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold uppercase text-gray-500">Apellido</label>
+                    <input 
+                      type="text" 
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      required
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black" 
+                    />
+                  </div>
                 </div>
+
                 <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">Apellido</label>
-                  <input type="text" className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black" />
+                  <label className="text-xs font-bold uppercase text-gray-500">Email</label>
+                  <input 
+                    type="email" 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black" 
+                  />
                 </div>
-              </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-gray-500">Email</label>
-                <input type="email" className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black" />
-              </div>
+                <div className="space-y-1">
+                   <label className="text-xs font-bold uppercase text-gray-500">Asunto</label>
+                   <select 
+                     name="subject"
+                     value={formData.subject}
+                     onChange={handleChange}
+                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black"
+                   >
+                     <option value="GENERAL">Consulta general</option>
+                     <option value="ORDER_STATUS">Estado de mi pedido</option>
+                     <option value="RETURNS">Cambios y Devoluciones</option>
+                     <option value="WARRANTY">Garantías</option>
+                   </select>
+                </div>
 
-              <div className="space-y-1">
-                 <label className="text-xs font-bold uppercase text-gray-500">Asunto</label>
-                 <select className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black">
-                   <option>Consulta general</option>
-                   <option>Estado de mi pedido</option>
-                   <option>Cambios y Devoluciones</option>
-                   <option>Garantías</option>
-                 </select>
-              </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-gray-500">Mensaje</label>
+                  <textarea 
+                    rows="4" 
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    minLength={10}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black"
+                  ></textarea>
+                </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-gray-500">Mensaje</label>
-                <textarea rows="4" className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:border-vinilo-black"></textarea>
-              </div>
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
 
-              <button className="w-full bg-vinilo-black text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-vinilo-red transition-colors flex items-center justify-center gap-2 mt-4">
-                Enviar Mensaje <Send size={16} />
-              </button>
-            </form>
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-vinilo-black text-white py-3 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-vinilo-red transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      Enviar Mensaje <Send size={16} />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
           </div>
 
         </div>

@@ -66,6 +66,7 @@ REST_FRAMEWORK = {
     
     # --- NEWSLETTER ---
     'newsletter_add': '3/minute',  # ✓
+    'contact_form': '5/hour',
 }
 }
 SIMPLE_JWT = {
