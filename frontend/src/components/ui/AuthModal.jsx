@@ -66,7 +66,6 @@ const ProfileView = ({ user, onChangeView, onLogout, onClose }) => {
       </div>
 
       <div className="space-y-3">
-        {/* Botón Mis Datos */}
         <button 
           onClick={() => onChangeView('edit-profile')}
           className="w-full flex items-center justify-between p-4 border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group text-left"
@@ -81,7 +80,6 @@ const ProfileView = ({ user, onChangeView, onLogout, onClose }) => {
           <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
         </button>
 
-        {/* Botón Mis Pedidos */}
         <button 
           onClick={() => {
             navigate('/account/orders');
@@ -99,7 +97,6 @@ const ProfileView = ({ user, onChangeView, onLogout, onClose }) => {
           <ArrowLeft size={16} className="text-gray-300 rotate-180 group-hover:text-vinilo-red transition-colors" />
         </button>
 
-        {/* Botón Wishlist */}
         <button 
           onClick={() => {
             navigate('/account/wishlist');
@@ -155,11 +152,11 @@ const EditProfileView = ({ formData, setFormData, onSubmit, loading, error, succ
 );
 
 // ----------------------------------------------------------------------
-// 3. COMPONENTE PRINCIPAL (Contenedor Lógico)
+// 3. COMPONENTE PRINCIPAL
 // ----------------------------------------------------------------------
 
 const AuthModal = ({ isOpen, onClose }) => {
-  const { login, register, verifyEmail, recoverPassword, updateProfile, logout, user, isAuthenticated, error: authError } = useAuth();
+  const { login, register, verifyEmail, recoverPassword, updateProfile, logout, user, isAuthenticated } = useAuth();
   
   const [activeView, setActiveView] = useState('login'); 
   const [internalLoading, setInternalLoading] = useState(false);
@@ -171,11 +168,11 @@ const AuthModal = ({ isOpen, onClose }) => {
 
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
 
+  // Sincronizar estado cuando abre el modal o cambia la sesión
   useEffect(() => {
     if (isOpen) {
         setInternalLoading(false);
         setErrorMsg('');
-        setIsVerifying(false);
         setOtpCode('');
         
         if (isAuthenticated) {
@@ -188,7 +185,8 @@ const AuthModal = ({ isOpen, onClose }) => {
                 confirmPassword: ''
             });
         } else {
-            if (activeView !== 'login' || !successMsg) {
+            // No resetear si estamos en proceso de verificación
+            if (!isVerifying) {
                 setActiveView('login');
                 setFormData({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
                 setSuccessMsg('');
@@ -198,16 +196,7 @@ const AuthModal = ({ isOpen, onClose }) => {
   }, [isOpen, isAuthenticated, user]);
 
   const handleTabChange = (targetView) => {
-    if (activeView === targetView) return;
-
-    if (internalLoading) {
-        setInternalLoading(false); 
-        const action = activeView === 'login' ? 'el inicio de sesión' : 'el registro';
-        setErrorMsg(`Proceso interrumpido. Se canceló ${action}.`);
-        setSuccessMsg('');
-        return; 
-    }
-
+    if (activeView === targetView || internalLoading) return;
     setActiveView(targetView);
     setSuccessMsg('');
     setErrorMsg('');
@@ -219,78 +208,78 @@ const AuthModal = ({ isOpen, onClose }) => {
     setInternalLoading(true);
     setErrorMsg('');
     
+    // Solo limpiar éxito si no estamos editando perfil (para que el feedback sea visible)
     if (activeView !== 'edit-profile') setSuccessMsg('');
-
-    if (activeView === 'register' && !isVerifying) {
-      if (formData.password !== formData.confirmPassword) {
-        setErrorMsg('Las contraseñas no coinciden.');
-        setInternalLoading(false);
-        return;
-      }
-    }
 
     try {
         if (activeView === 'login') {
             const result = await login(formData.email, formData.password);
-            if (result && result.success) onClose();
-            else if (result) setErrorMsg(result.message);
+            if (result && result.success) {
+                onClose();
+            } else {
+                setErrorMsg(result?.message || 'Credenciales incorrectas');
+            }
         } 
         else if (activeView === 'register') {
+            // FLUJO 1: Enviar datos iniciales (Crea PendingUser)
             if (!isVerifying) {
+                if (formData.password !== formData.confirmPassword) {
+                    setErrorMsg('Las contraseñas no coinciden.');
+                    setInternalLoading(false);
+                    return;
+                }
                 const result = await register(formData);
-                if (result.success && result.needVerification) {
+                if (result.success) {
                     setIsVerifying(true);
-                    setSuccessMsg(`Hemos enviado un código de verificación a ${formData.email}`);
-                } else if (!result.success) {
-                    setErrorMsg(result.message);
+                    setSuccessMsg(`Código enviado a ${formData.email}`);
+                } else {
+                    setErrorMsg(result.message || 'Error en el registro');
                 }
             } 
+            // FLUJO 2: Enviar OTP (Crea User Real)
             else {
                 const result = await verifyEmail(formData.email, otpCode);
                 if (result.success) {
-                    setSuccessMsg('Cuenta verificada exitosamente. Iniciando sesión...');
-                    await login(formData.email, formData.password);
-                    onClose();
+                    setSuccessMsg('¡Cuenta verificada! Iniciando sesión...');
+                    // Login automático tras verificación
+                    const logRes = await login(formData.email, formData.password);
+                    if (logRes.success) onClose();
                 } else {
-                    setErrorMsg(result.message || 'Código incorrecto');
+                    setErrorMsg(result.message || 'Código incorrecto o expirado');
                 }
             }
         } 
         else if (activeView === 'recovery') {
             const result = await recoverPassword(formData.email);
             if (result?.success) {
-                setSuccessMsg('Te hemos enviado un enlace de recuperación a tu correo.');
+                setSuccessMsg('Enlace enviado. Revisa tu correo.');
             } else {
-                setErrorMsg('Error al procesar la solicitud.');
+                setErrorMsg('No pudimos procesar la solicitud.');
             }
         }
         else if (activeView === 'edit-profile') {
             const result = await updateProfile(formData);
             if (result?.success) {
-                setSuccessMsg('Información actualizada correctamente.');
+                setSuccessMsg('Datos actualizados.');
                 setTimeout(() => { setActiveView('profile'); setSuccessMsg(''); }, 1500);
             } else {
                 setErrorMsg(result.message || "Error al actualizar.");
             }
         }
     } catch (err) {
-        setErrorMsg("Error de conexión. Intenta nuevamente.");
+        setErrorMsg("Error de conexión con el servidor.");
     } finally {
         setInternalLoading(false); 
     }
   };
 
-  const handleLogout = () => {
-      logout();
-      onClose();
-  };
-
   if (!isOpen) return null;
 
+  // Renderizado Condicional de Vistas para Usuarios Logueados
   if (isAuthenticated && activeView === 'profile') {
       return (
         <ModalWrapper onClose={onClose}>
-            <ProfileView user={user} onChangeView={setActiveView} onLogout={handleLogout} onClose={onClose} />
+            <ProfileView user={user} onChangeView={setActiveView} onLogout={logout} onClose={onClose} />
         </ModalWrapper>
       );
   }
@@ -311,9 +300,11 @@ const AuthModal = ({ isOpen, onClose }) => {
       );
   }
 
+  // Renderizado de Login / Register / Recovery
   return (
     <ModalWrapper onClose={onClose}>
         
+        {/* Tabs superiores */}
         {activeView !== 'recovery' && !isVerifying && (
           <div className="flex border-b border-gray-100">
             <button 
@@ -334,12 +325,14 @@ const AuthModal = ({ isOpen, onClose }) => {
         )}
 
         <div className="p-8 md:p-10">
+            {/* Header del formulario */}
             <div className="text-center mb-6 relative">
                 {(activeView === 'recovery' || isVerifying) && (
                     <button 
                         onClick={() => { 
                             if(isVerifying) setIsVerifying(false); 
-                            else { setActiveView('login'); setSuccessMsg(''); setErrorMsg(''); } 
+                            else setActiveView('login'); 
+                            setErrorMsg(''); setSuccessMsg('');
                         }} 
                         className="absolute -top-2 left-0 text-gray-400 hover:text-vinilo-black transition-colors flex items-center gap-1 text-[10px] uppercase font-bold tracking-widest"
                     >
@@ -348,124 +341,95 @@ const AuthModal = ({ isOpen, onClose }) => {
                 )}
                 
                 <h3 className="font-serif text-2xl md:text-3xl text-vinilo-black italic mb-2 mt-4 md:mt-0">
-                    {isVerifying 
-                        ? 'Verifica tu Email' 
-                        : activeView === 'login' 
-                            ? 'Bienvenido de nuevo' 
-                            : activeView === 'register' 
-                                ? 'Únete al Club Vinilo' 
-                                : 'Recuperar Contraseña'}
+                    {isVerifying ? 'Verifica tu Email' : 
+                     activeView === 'login' ? 'Bienvenido' : 
+                     activeView === 'register' ? 'Únete al Club' : 'Recuperar'}
                 </h3>
-                
-                <p className="text-xs text-gray-400 font-sans tracking-wide px-4 leading-relaxed">
-                    {isVerifying 
-                        ? 'Ingresa el código de 6 dígitos que enviamos a tu correo.'
-                        : activeView === 'login' 
-                            ? 'Ingresa tus credenciales para acceder.' 
-                            : activeView === 'register' 
-                                ? 'Crea una cuenta y obtén beneficios.' 
-                                : 'Ingresa tu email para recibir el enlace.'}
+                <p className="text-xs text-gray-400 font-sans tracking-wide px-4">
+                    {isVerifying ? 'Ingresa el código enviado a tu correo' : 
+                     activeView === 'login' ? 'Ingresa tus credenciales para acceder' : 
+                     activeView === 'register' ? 'Crea una cuenta y obtén beneficios' : 'Ingresa tu email para continuar'}
                 </p>
             </div>
 
+            {/* Mensajes de feedback */}
             {errorMsg && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-500 text-xs text-center font-bold flex items-center justify-center gap-2 animate-fade-in">
+                <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-500 text-xs text-center font-bold flex items-center justify-center gap-2">
                     <AlertCircle size={16} /> {errorMsg}
                 </div>
             )}
             
             {successMsg && !isVerifying && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-100 text-green-700 text-xs text-center font-bold flex flex-col items-center justify-center gap-2 animate-fade-in">
-                    <span className="flex items-center gap-2"><CheckCircle size={16} /> {successMsg}</span>
-                    {activeView === 'recovery' && (
-                        <button onClick={onClose} className="mt-2 underline text-[10px] hover:text-black">Cerrar</button>
-                    )}
+                <div className="mb-4 p-3 bg-green-50 border border-green-100 text-green-700 text-xs text-center font-bold flex items-center justify-center gap-2">
+                    <CheckCircle size={16} /> {successMsg}
                 </div>
             )}
 
-            {!(activeView === 'recovery' && successMsg && !errorMsg) && (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    
-                    {isVerifying ? (
-                        <div className="animate-fade-in space-y-4">
-                            <div className="p-3 bg-blue-50 text-blue-700 text-xs text-center rounded">
-                                Enviamos el código a <b>{formData.email}</b>
-                            </div>
-                            <InputField 
-                                icon={KeyRound} 
-                                type="text"
-                                placeholder="Código de 6 dígitos (Ej: 123456)" 
-                                value={otpCode} 
-                                onChange={(e) => {
-                                    const val = e.target.value.replace(/\D/g, '').slice(0,6);
-                                    setOtpCode(val);
-                                }} 
-                                required 
-                            />
+            <form onSubmit={handleSubmit} className="space-y-4">
+                
+                {/* Campos de Verificación OTP */}
+                {isVerifying ? (
+                    <div className="animate-fade-in space-y-4">
+                        <InputField 
+                            icon={KeyRound} 
+                            type="text"
+                            placeholder="Código de 6 dígitos" 
+                            value={otpCode} 
+                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0,6))} 
+                            required 
+                        />
+                        <div className="text-[10px] text-gray-400 text-center uppercase tracking-tighter">
+                            El código expira en 15 minutos
                         </div>
-                    ) : (
-                        <>
-                            {activeView === 'register' && (
-                                <div className="grid grid-cols-2 gap-4 animate-fade-in">
-                                    <InputField icon={User} placeholder="Nombre" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required />
-                                    <InputField icon={User} placeholder="Apellido" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required />
-                                </div>
-                            )}
-
-                            <InputField icon={Mail} type="email" placeholder="Correo electrónico" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
-
-                            {activeView !== 'recovery' && (
-                                <>
-                                <InputField 
-                                    icon={Lock} 
-                                    type="password" 
-                                    placeholder="Contraseña" 
-                                    value={formData.password} 
-                                    onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                                    required 
-                                />
-
-                                {activeView === 'register' && (
-                                    <div className="animate-fade-in">
-                                    <InputField 
-                                        icon={Lock} 
-                                        type="password" 
-                                        placeholder="Confirmar contraseña" 
-                                        value={formData.confirmPassword} 
-                                        onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
-                                        required 
-                                    />
-                                    </div>
-                                )}
-                                </>
-                            )}
-                        </>
-                    )}
-
-                    {!isVerifying && activeView === 'login' && (
-                        <div className="flex justify-end text-xs pt-1">
-                            <button type="button" onClick={() => setActiveView('recovery')} className="text-gray-400 hover:text-vinilo-red transition-colors underline decoration-1 underline-offset-2">¿Olvidaste tu contraseña?</button>
-                        </div>
-                    )}
-
-                    <div className="pt-2">
-                        <Button variant="primary" size="full" type="submit" disabled={internalLoading} className={`relative ${internalLoading ? 'opacity-90 cursor-not-allowed' : ''}`}>
-                            {internalLoading ? (
-                                <div className="flex items-center gap-2 justify-center"><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Procesando...</div>
-                            ) : (
-                                isVerifying 
-                                    ? 'Verificar Cuenta' 
-                                    : activeView === 'login' ? 'Iniciar Sesión' : activeView === 'register' ? 'Registrarse' : 'Enviar Correo'
-                            )}
-                        </Button>
                     </div>
-                </form>
-            )}
+                ) : (
+                    <>
+                        {/* Campos de Registro (Nombres) */}
+                        {activeView === 'register' && (
+                            <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                                <InputField icon={User} placeholder="Nombre" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} required />
+                                <InputField icon={User} placeholder="Apellido" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} required />
+                            </div>
+                        )}
 
-            {activeView === 'register' && !isVerifying && !successMsg && (
+                        {/* Email (Login / Register / Recovery) */}
+                        <InputField icon={Mail} type="email" placeholder="Correo electrónico" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
+
+                        {/* Password (Login / Register) */}
+                        {activeView !== 'recovery' && (
+                            <>
+                                <InputField icon={Lock} type="password" placeholder="Contraseña" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required />
+                                {activeView === 'register' && (
+                                    <InputField icon={Lock} type="password" placeholder="Confirmar contraseña" value={formData.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} required />
+                                )}
+                            </>
+                        )}
+                    </>
+                )}
+
+                {/* Olvidé contraseña */}
+                {!isVerifying && activeView === 'login' && (
+                    <div className="flex justify-end text-xs pt-1">
+                        <button type="button" onClick={() => setActiveView('recovery')} className="text-gray-400 hover:text-vinilo-red transition-colors underline decoration-1 underline-offset-2">¿Olvidaste tu contraseña?</button>
+                    </div>
+                )}
+
+                {/* Botón de acción */}
+                <div className="pt-2">
+                    <Button variant="primary" size="full" type="submit" disabled={internalLoading}>
+                        {internalLoading ? 'Procesando...' : 
+                         isVerifying ? 'Verificar Código' :
+                         activeView === 'login' ? 'Iniciar Sesión' : 
+                         activeView === 'register' ? 'Registrarse' : 'Enviar Correo'}
+                    </Button>
+                </div>
+            </form>
+
+            {/* Footer legal */}
+            {activeView === 'register' && !isVerifying && (
                 <div className="animate-fade-in mt-6">
                     <p className="text-center text-[10px] text-gray-400 px-4 leading-tight">
-                        Al registrarte aceptas nuestros <a href="/terms-conditions" className="underline hover:text-vinilo-black">Términos</a> y <a href="/privacy-policy" className="underline hover:text-vinilo-black">Política de Privacidad</a>.
+                        Al registrarte aceptas nuestros <a href="/terms" className="underline hover:text-vinilo-black">Términos</a> y <a href="/privacy" className="underline hover:text-vinilo-black">Privacidad</a>.
                     </p>
                 </div>
             )}
