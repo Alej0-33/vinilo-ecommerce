@@ -56,7 +56,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"Error enviando {task}: {e}"))
 
     def send_confirmation(self, order):
-        track_url = "http://localhost:5173/track" # Ajustar dominio en PROD
+        track_url = "https://vinilostore.xyz/track" # Ajustar dominio en PROD
         
         subject = f'Confirmación de Pedido #{str(order.id)[:8].upper()}'
         message = f"""
@@ -81,7 +81,7 @@ class Command(BaseCommand):
         )
 
     def send_update(self, order):
-        track_url = "http://localhost:5173/track"
+        track_url = "https://vinilostore.xyz/track"
         status_label = order.get_status_display()
         
         extra_info = ""

@@ -172,7 +172,7 @@ AUTH_PASSWORD_VALIDATORS = [
 PASSWORD_RESET_TIMEOUT = 1200
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST')
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
