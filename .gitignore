@@ -23,6 +23,7 @@ db.sqlite3-journal
 # Django Media (Archivos subidos por usuarios)
 media/
 static/
+staticfiles/
 
 # Variables de entorno (¡Muy importante no subir claves secretas!)
 .env
