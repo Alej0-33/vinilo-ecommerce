@@ -381,6 +381,24 @@ const AuthModal = ({ isOpen, onClose }) => {
                         <div className="text-[10px] text-gray-400 text-center uppercase tracking-tighter">
                             El código expira en 15 minutos
                         </div>
+                        <button 
+                            type="button"
+                            onClick={async () =>{
+                              setErrorMsg('');
+                              setInternalLoading(true);
+                              const result = await register(formData);
+                              setInternalLoading(false);
+                              if(result.success) {
+                                setSuccessMsg('Nuevo codigo enviad');
+                              }else{
+                                setErrorMsg(result.message || 'Error al reenviar');
+                              }
+                            }}
+                            disabled={internalLoading}
+                            className="mt-3 text-[10px] text-vinilo-red hover:underline disabled:opacity-50"
+                        >
+                          ¿No recibiste el código? Reenviar
+                        </button>
                     </div>
                 ) : (
                     <>
