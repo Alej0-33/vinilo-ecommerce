@@ -99,7 +99,7 @@ SECURE_BROWSER_XSS_FILTER = True
 
 if not DEBUG:
     CORS_ALLOWED_ORIGINS = [
-         "https://vinilo.xyz",
+         "https://vinilostore.xyz",
          "https://www.vinilostore.xyz",
     ]
 if not DEBUG:
