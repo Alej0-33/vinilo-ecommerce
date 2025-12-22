@@ -1,0 +1,233 @@
+/* Configuración de Catálogo - Tema Vinilo Oscuro */
+
+/* Variables del tema */
+:root {
+    --vinilo-red: #8B1A1A;
+    --vinilo-black: #1a1a1a;
+    --vinilo-dark-gray: #2a2a2a;
+    --vinilo-gray: #f4f4f4;
+    --border-color: #444444;
+}
+
+/* Contenedor principal del formulario */
+.form-row.field-brands_input,
+.form-row.field-sizes_input {
+    margin-bottom: 25px !important;
+    background-color: var(--vinilo-black) !important;
+    padding: 15px !important;
+    border-radius: 4px !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Textareas con tema oscuro */
+.field-brands_input textarea,
+.field-sizes_input textarea {
+    font-family: 'Courier New', 'Consolas', monospace !important;
+    font-size: 14px !important;
+    line-height: 1.8 !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    padding: 15px !important;
+    transition: all 0.3s ease !important;
+    background-color: var(--vinilo-dark-gray) !important;
+    color: var(--vinilo-gray) !important;
+}
+
+.field-brands_input textarea:focus,
+.field-sizes_input textarea:focus {
+    border-color: var(--vinilo-red) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.2) !important;
+    background-color: #000 !important;
+}
+
+.field-brands_input textarea::placeholder,
+.field-sizes_input textarea::placeholder {
+    color: #666 !important;
+    font-style: italic !important;
+}
+
+/* Labels con estilo Vinilo */
+.field-brands_input label,
+.field-sizes_input label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #bbb !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 10px !important;
+    display: block !important;
+}
+
+/* Help text */
+.field-brands_input .help,
+.field-sizes_input .help {
+    font-size: 11px !important;
+    color: #888 !important;
+    font-style: italic !important;
+    margin-top: 8px !important;
+    display: block !important;
+}
+
+/* Checkboxes de género - Tema oscuro */
+.field-gender_hombre,
+.field-gender_mujer,
+.field-gender_unisex {
+    background-color: var(--vinilo-dark-gray) !important;
+    padding: 18px !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    margin-bottom: 12px !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    cursor: pointer !important;
+}
+
+.field-gender_hombre:hover,
+.field-gender_mujer:hover,
+.field-gender_unisex:hover {
+    border-color: var(--vinilo-red) !important;
+    background-color: #000 !important;
+    transform: translateX(4px) !important;
+}
+
+/* Checkboxes personalizados */
+.field-gender_hombre input[type="checkbox"],
+.field-gender_mujer input[type="checkbox"],
+.field-gender_unisex input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 15px !important;
+    cursor: pointer !important;
+    accent-color: var(--vinilo-red) !important;
+    background-color: var(--vinilo-black) !important;
+    border: 2px solid var(--border-color) !important;
+}
+
+/* Labels de checkboxes */
+.field-gender_hombre label,
+.field-gender_mujer label,
+.field-gender_unisex label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--vinilo-gray) !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+    text-transform: none !important;
+}
+
+/* Help text para checkboxes */
+.field-gender_hombre .help,
+.field-gender_mujer .help,
+.field-gender_unisex .help {
+    font-size: 10px !important;
+    color: #888 !important;
+    margin-left: 35px !important;
+    display: block !important;
+    margin-top: 5px !important;
+    font-style: italic !important;
+}
+
+/* Fieldset headers personalizados - Tema Vinilo */
+.module h2 {
+    background: linear-gradient(to right, var(--vinilo-dark-gray), var(--vinilo-black)) !important;
+    border-left: 4px solid var(--vinilo-red) !important;
+    color: var(--vinilo-gray) !important;
+    padding: 15px 20px !important;
+    margin-bottom: 20px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    font-family: "Noto Serif", serif !important;
+    font-style: italic !important;
+    letter-spacing: 0.5px !important;
+    border-radius: 0 !important;
+}
+
+/* Animación suave */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-row {
+    animation: fadeIn 0.4s ease-out !important;
+}
+
+/* Vista previa mejorada */
+.column-brands_preview span,
+.column-sizes_preview span,
+.column-genders_preview span {
+    display: inline-block !important;
+    padding: 5px 12px !important;
+    border-radius: 2px !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+}
+
+/* Mejora en descripciones de fieldsets */
+.module .description {
+    background-color: transparent !important;
+    color: var(--vinilo-gray) !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-bottom: 15px !important;
+}
+
+/* Botón submit con tema Vinilo */
+.submit-row input[type="submit"],
+.submit-row .button {
+    background: var(--vinilo-red) !important;
+    color: #ffffff !important;
+    border: none !important;
+    text-transform: uppercase !important;
+    font-weight: 700 !important;
+    letter-spacing: 1px !important;
+    padding: 12px 24px !important;
+    transition: all 0.3s !important;
+}
+
+.submit-row input[type="submit"]:hover,
+.submit-row .button:hover {
+    background: #fff !important;
+    color: var(--vinilo-black) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .field-brands_input textarea,
+    .field-sizes_input textarea {
+        font-size: 12px !important;
+    }
+    
+    .field-gender_hombre,
+    .field-gender_mujer,
+    .field-gender_unisex {
+        padding: 15px !important;
+    }
+}
+
+/* ============================================ */
+/* SOBRESCRIBIR TÍTULOS DE COLUMNA EN LISTA */
+/* ============================================ */
+
+/* Títulos de columna en la lista de CatalogConfig - TEXTO BLANCO */
+.model-catalogconfig #changelist table thead th {
+    color: #ffffff !important;
+}
+
+.model-catalogconfig #changelist table thead th a {
+    color: #ffffff !important;
+}
+
+.model-catalogconfig #changelist table thead th a:hover {
+    color: var(--vinilo-red) !important;
+}

@@ -103,7 +103,7 @@ if not DEBUG:
          "https://www.vinilostore.xyz",
     ]
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED', 'https')
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = ['https://vinilostore.xyz', 'https://www.vinilostore.xyz']

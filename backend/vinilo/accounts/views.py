@@ -31,8 +31,8 @@ class RegisterView(generics.GenericAPIView):
         # Mapeamos los datos del frontend (camelCase) a los del serializador (snake_case)
         data = {
             'email': request.data.get('email'),
-            'first_name': request.data.get('firstName'),
-            'last_name': request.data.get('lastName'),
+            'first_name': request.data.get('first_name'),
+            'last_name': request.data.get('last_name'),
             'password': request.data.get('password')
         }
         

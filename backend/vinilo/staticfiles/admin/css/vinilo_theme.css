@@ -1,0 +1,188 @@
+/* backend/static/admin/css/vinilo_theme.css */
+
+/* 1. Importar Fuentes */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;700&display=swap');
+
+/* 2. Definición de Variables */
+:root {
+    --vinilo-red: #8B1A1A;
+    --vinilo-black: #1a1a1a;       /* Fondo Principal */
+    --vinilo-dark-gray: #2a2a2a;   /* Fondo Secundario (Cajas, filas) */
+    --vinilo-gray: #f4f4f4;        /* Texto Principal */
+    --border-color: #444444;       /* Bordes sutiles */
+    
+    --font-serif: "Noto Serif", serif;
+    --font-sans: "Inter", sans-serif;
+}
+
+/* 3. Estilos Globales (Modo Oscuro) */
+body {
+    font-family: var(--font-sans) !important;
+    background-color: var(--vinilo-black) !important; /* Fondo NEGRO */
+    color: var(--vinilo-gray) !important;             /* Texto BLANCO */
+}
+
+/* Enlaces generales */
+a:link, a:visited {
+    color: #cccccc !important;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+a:hover {
+    color: var(--vinilo-red) !important;
+}
+
+/* --- HEADER --- */
+#header {
+    background: #000000 !important; /* Negro puro para diferenciar del body */
+    color: #ffffff;
+    padding: 15px 40px;
+    border-bottom: 2px solid var(--vinilo-red);
+}
+
+#header #branding h1 {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 700;
+    color: #fff;
+}
+
+#user-tools {
+    color: #bbb;
+}
+
+/* --- TÍTULOS --- */
+h1, h2, h3, h4, h5 {
+    font-family: var(--font-serif) !important;
+    color: #ffffff !important;
+}
+
+/* Títulos de módulos (Barras azules por defecto en Django) */
+.module caption, .module h2 {
+    background-color: var(--vinilo-dark-gray) !important;
+    color: #fff !important;
+}
+
+/* --- BREADCRUMBS (Barra de navegación) --- */
+div.breadcrumbs {
+    background-color: var(--vinilo-dark-gray) !important;
+    color: #bbb !important;
+    border-bottom: 1px solid var(--border-color);
+}
+div.breadcrumbs a {
+    color: #fff !important;
+}
+
+/* --- CONTENEDORES Y MÓDULOS --- */
+#content, #content-main, .module {
+    background-color: var(--vinilo-black) !important;
+    color: var(--vinilo-gray) !important;
+}
+
+/* --- TABLAS (Listas de datos) --- */
+#changelist table {
+    background-color: var(--vinilo-black);
+}
+
+#changelist table thead th {
+    background: #000 !important; /* Cabecera negra */
+    color: var(--vinilo-red) !important; /* Texto rojo para destacar columnas */
+    border-bottom: 1px solid var(--border-color);
+}
+
+#changelist table thead th a {
+    color: var(--vinilo-red) !important;
+}
+
+/* Filas alternas oscuras */
+tr.row1 { 
+    background: var(--vinilo-black) !important; 
+    color: #eee;
+}
+tr.row2 { 
+    background: var(--vinilo-dark-gray) !important; 
+    color: #eee;
+}
+tr:hover {
+    background-color: #333 !important; /* Highlight al pasar el mouse */
+}
+
+/* Bordes de tabla */
+td, th {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* --- FORMULARIOS E INPUTS --- */
+label {
+    color: #bbb !important;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Cajas de texto oscuras */
+input[type=text], input[type=password], input[type=email], input[type=number], textarea, select {
+    background-color: var(--vinilo-dark-gray) !important;
+    border: 1px solid var(--border-color) !important;
+    color: #fff !important;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--vinilo-red) !important;
+    outline: none;
+}
+
+.form-row {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* --- FILTROS LATERALES (Sidebar derecho) --- */
+#changelist-filter {
+    background-color: var(--vinilo-dark-gray) !important;
+    border-left: 1px solid var(--border-color) !important;
+}
+#changelist-filter h2 {
+    background-color: #000 !important;
+    color: #fff !important;
+}
+#changelist-filter li a {
+    color: #999 !important;
+}
+#changelist-filter li.selected a {
+    color: var(--vinilo-red) !important;
+    font-weight: bold;
+}
+
+/* --- BOTONES --- */
+.button, input[type=submit], .submit-row input {
+    background: var(--vinilo-red) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 0px !important;
+    text-transform: uppercase;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 12px 24px;
+    transition: all 0.3s;
+}
+
+.button:hover, input[type=submit]:hover {
+    background: #fff !important;
+    color: var(--vinilo-black) !important;
+}
+
+/* Botones secundarios (ej: borrar) */
+.deletelink {
+    color: #ff6b6b !important;
+}
+
+/* --- PAGINACIÓN --- */
+.paginator {
+    background-color: var(--vinilo-dark-gray) !important;
+    color: #fff !important;
+    border-top: 1px solid var(--border-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
