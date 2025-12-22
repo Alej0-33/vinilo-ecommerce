@@ -97,11 +97,16 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+if not DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+         "https://vinilo.xyz",
+         "https://www.vinilostore.xyz",
+    ]
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED', 'https')
+    SESSION_COOKIE_SECURE = True
+    CRSF_COOKIE_SECURE = True
+    CRSF_TRUSTED_ORIGINS = ['https://vinilostore.xyz', 'https://www.vinilostore.xyz']
 CORS_ALLOW_CREDENTIALS = True
 
 
