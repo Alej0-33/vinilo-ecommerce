@@ -45,13 +45,12 @@ class RegisterView(generics.GenericAPIView):
         code = str(random.randint(100000, 999999))
         
         # Guardar en tabla temporal PendingUser
-        pending, created = PendingUser.objects.update_or_create(
+        PendingUser.objects.filter(email=email).delete()
+        pending = PendingUser.objects.create(
             email=email,
-            defaults={
-                'first_name': serializer.validated_data['first_name'],
-                'last_name': serializer.validated_data['last_name'],
-                'code': code
-            }
+            first_name=serializer.validated_data['first_name'],
+            last_name=serializer.validated_data['last_name'],
+            code=code
         )
         # Hachear la contraseña antes de guardarla en la tabla temporal
         pending.set_password(serializer.validated_data['password'])
