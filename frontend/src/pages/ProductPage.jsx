@@ -254,7 +254,7 @@ const ProductPage = () => {
                             }
                             // Construir mensaje de WhatsApp
                             const message = `Hola! Estoy interesado en:\n\n📦 ${product.name}\n👔 Marca: ${product.brand}\n📏 Talla: ${selectedSize}\n💰 Precio: $${parseFloat(product.price).toLocaleString('es-CO')}\n\n🔗 Link: ${window.location.href}`;
-                            const whatsappNumber = "573001234567"; // ⚠️ REEMPLAZA CON TU NÚMERO REAL
+                            const whatsappNumber = import.meta.env.VITE_STORE_WHATSAPP; 
                             const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
                             window.open(whatsappURL, '_blank');
                         }}
