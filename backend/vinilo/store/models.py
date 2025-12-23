@@ -63,7 +63,11 @@ class Product(models.Model):
     GENDER_CHOICES = [('M', 'Hombre'), ('F', 'Mujer'), ('U', 'Unisex')]
     BRAND_CHOICES = [
         ('NIKE', 'Nike'), ('ADIDAS', 'Adidas'), 
-        ('PUMA', 'Puma'), ('REEBOK', 'Reebok')
+        ('PUMA', 'Puma'), ('REEBOK', 'Reebok'),
+        ('AMIRI', 'Amiri'), ('DOLCE GABANNA', 'Dolce Gabanna'),
+        ('LACOSTE', 'Lacoste'), ('HUGO BOSS', 'Hugo Boss'),
+        ('NEW BALANCE', 'New Balance'), ('VALENTINO', 'Valentino')
+
     ]
 
     id = models.CharField(max_length=100, primary_key=True, unique=True, default=uuid.uuid4, editable=False)
