@@ -7,9 +7,9 @@ import { Truck, ShieldCheck, ArrowRight, Star, Info, CheckCircle, AlertCircle, L
 import axios from 'axios';
 
 // --- IMPORTACIÓN DE ASSETS LOCALES ---
-import imgCategory1 from '../assets/IMG_4668.PNG';
-import imgCategory2 from '../assets/IMG_4669.PNG';
-import imgCategory3 from '../assets/IMG_4671.PNG';
+import imgCategory1 from '../assets/modelo_amiri3.png';
+import imgCategory2 from '../assets/modelo_newbalance3.png';
+import imgCategory3 from '../assets/modelo_valentino3.png';
 import imgManifesto from '../assets/IMG_4681.PNG';
 
 // Datos Categorías Visuales
